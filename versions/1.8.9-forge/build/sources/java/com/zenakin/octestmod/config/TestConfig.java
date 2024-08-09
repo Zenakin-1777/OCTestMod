@@ -5,7 +5,6 @@ import cc.polyfrost.oneconfig.config.annotations.Number;
 import cc.polyfrost.oneconfig.config.data.PageLocation;
 import com.zenakin.octestmod.OCTestMod;
 import com.zenakin.octestmod.hud.GameStateDisplay;
-import com.zenakin.octestmod.hud.TestHud;
 import com.zenakin.octestmod.config.pages.MapBlacklistPage;
 import cc.polyfrost.oneconfig.config.Config;
 import cc.polyfrost.oneconfig.config.data.Mod;
@@ -25,15 +24,12 @@ public class TestConfig extends Config {
     )
     public boolean isModEnabled = true; // The default value for the boolean Switch.
 
-    @HUD(
-            name = "Show mod state"
+    @Number(
+            name = "Bedwars stars level threshold",
+            min = 10, max = 5000,
+            step = 50
     )
-    public TestHud hud = new TestHud();
-
-    @HUD(
-            name = "Display current gamemode"
-    )
-    public GameStateDisplay hud2 = new GameStateDisplay();
+    public int starThreshold = 150; // default value
 
     @Text(
             name = "Hypixel API Key",
@@ -42,19 +38,17 @@ public class TestConfig extends Config {
     )
     public static String apiKey = "";
 
-    @Number(
-            name = "Bedwars stars level threshold",
-            min = 10, max = 5000,
-            step = 50
+    @HUD(
+            name = "Display current gamemode"
     )
-    public static int starThreshold = 150; // default value
+    public GameStateDisplay hud2 = new GameStateDisplay();
 
     @Page(
             name = "Map Blacklist",
-            location = PageLocation.BOTTOM,
+            location = PageLocation.TOP,
             description = "More maps will be added soon!"
     )
-    public static MapBlacklistPage pageToOpen = new MapBlacklistPage();
+    public MapBlacklistPage mapBlacklistPage = new MapBlacklistPage();
 
 /*
     @Slider(

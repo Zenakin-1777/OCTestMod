@@ -12,14 +12,24 @@ import com.zenakin.octestmod.config.TestConfig;
  */
 public class GameStateDisplay extends SingleTextHud {
     OCTestMod mod = new OCTestMod();
+    public int gameState;
 
     public GameStateDisplay() {
-        super("Currently in", true);
+        super(" ", true);
     }
 
     @Override
     public String getText(boolean example) {
-        if (mod.isInBedwarsGame()) return "Bedwars!";
-        return "not Bedwars..";
+        if (mod.isInBedwarsGame() && TestConfig.instance.isModEnabled) {
+            gameState = 1;
+            return "Currently in Bedwars!";
+        } else if (!mod.isInBedwarsGame() && TestConfig.instance.isModEnabled) {
+            gameState = 2;
+            return "Currently not in Bedwars..";
+        } else {
+            gameState = 0;
+            return "Mod Dissabled";
+        }
+
     }
 }

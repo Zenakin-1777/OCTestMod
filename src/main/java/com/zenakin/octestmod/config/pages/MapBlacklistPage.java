@@ -1,5 +1,6 @@
 package com.zenakin.octestmod.config.pages;
 
+import cc.polyfrost.oneconfig.config.annotations.Button;
 import cc.polyfrost.oneconfig.gui.pages.Page;
 import cc.polyfrost.oneconfig.utils.InputHandler;
 import com.zenakin.octestmod.config.TestConfig;
@@ -9,7 +10,7 @@ import cc.polyfrost.oneconfig.config.annotations.Switch;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MapBlacklistPage extends Page {
+public class MapBlacklistPage extends Page{
     public List<String> blacklistedMaps = new ArrayList<>();
 
     @Switch(
@@ -32,6 +33,12 @@ public class MapBlacklistPage extends Page {
     )
     public boolean map4 = false;
 
+    @Button(
+            name = "Save Blacklist",
+            text = "Click here to save"
+    )
+    Runnable runnable = this::saveSwitchStates;
+
     public MapBlacklistPage() {
         super("Blacklisted Maps");
     }
@@ -52,14 +59,12 @@ public class MapBlacklistPage extends Page {
         onToggle("Map 4", map4);
     }
 
+    @Override
     public void draw(long vg, int x, int y, InputHandler inputHandler) {
         int startX = x + 16;
         int startY = y + 16;
         int gridX = x + 16;
         int gridY = y + 16 + 48 + 16;
-
-        // Ensure switches' states are saved whenever the page is drawn
-        saveSwitchStates();
     }
 
     public int drawStatic(long vg, int x, int y) {
