@@ -17,7 +17,7 @@ public class TestHud extends SingleTextHud {
 
     @Override
     public String getText(boolean example) {
-        if(OCTestMod.instance.isModEnabled) return "Enabled!";
+        if(TestConfig.instance.isModEnabled) return "Enabled!";
         return "Dissabled..";
     }
 }

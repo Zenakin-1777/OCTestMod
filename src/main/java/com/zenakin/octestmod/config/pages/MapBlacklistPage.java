@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MapBlacklistPage extends Page {
-    public static List<String> blacklistedMaps = new ArrayList<>();
+    public List<String> blacklistedMaps = new ArrayList<>();
 
     @Switch(
             name = "Map 1"

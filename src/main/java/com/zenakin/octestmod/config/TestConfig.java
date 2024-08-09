@@ -17,6 +17,8 @@ import cc.polyfrost.oneconfig.config.data.OptionSize;
  * See <a href="https://docs.polyfrost.cc/oneconfig/config/adding-options">this link</a> for more config Options
  */
 public class TestConfig extends Config {
+    public static TestConfig instance;
+
     @Switch(
             name = "Main Toggle",
             size = OptionSize.SINGLE
@@ -75,6 +77,8 @@ public class TestConfig extends Config {
         this.hideIf("hud2", () -> !isModEnabled);
          */
         initialize();
+
+        instance = this;
     }
 }
 

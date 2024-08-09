@@ -11,14 +11,13 @@ import com.zenakin.octestmod.config.TestConfig;
  * @see TestConfig#hud
  */
 public class TestHud extends SingleTextHud {
-    TestConfig mod = new TestConfig();
     public TestHud() {
         super("Mod is", true);
     }
 
     @Override
     public String getText(boolean example) {
-        if(mod.isModEnabled) return "Enabled!";
+        if(TestConfig.instance.isModEnabled) return "Enabled!";
         return "Dissabled..";
     }
 }

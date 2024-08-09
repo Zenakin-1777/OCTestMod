@@ -30,14 +30,12 @@ public class OCTestMod {
     @Mod.Instance(MODID)
     public static com.zenakin.octestmod.OCTestMod INSTANCE;
     public static TestConfig config;
-    public static OCTestMod instance;
 
     // Register the config and commands.
     @Mod.EventHandler
     public void onInit(FMLInitializationEvent event) {
         config = new TestConfig();
         MinecraftForge.EVENT_BUS.register(this);
-        instance = this;
         System.out.println("Mod Initializing...");
     }
 
