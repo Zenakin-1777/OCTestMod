@@ -1,18 +1,8 @@
 package com.zenakin.octestmod.config.pages;
 
-import cc.polyfrost.oneconfig.config.annotations.Button;
-import cc.polyfrost.oneconfig.gui.pages.Page;
-import cc.polyfrost.oneconfig.utils.InputHandler;
-import com.zenakin.octestmod.config.TestConfig;
-import com.zenakin.octestmod.OCTestMod;
 import cc.polyfrost.oneconfig.config.annotations.Switch;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class MapBlacklistPage {
-    public List<String> blacklistedMaps = new ArrayList<>();
-
     @Switch(
             name = "Map 1"
     )
@@ -33,25 +23,43 @@ public class MapBlacklistPage {
     )
     public boolean map4 = false;
 
-    @Button(
-            name = "Save Blacklist",
-            text = "Click here to save"
+    @Switch(
+            name = "Map 5"
     )
-    Runnable runnable = this::saveSwitchStates;
+    public boolean map5 = false;
 
-    public void onToggle(String mapName, boolean isToggled) {
-        if (isToggled) {
-            blacklistedMaps.add(mapName);
-        } else {
-            blacklistedMaps.remove(mapName);
-        }
-    }
+    @Switch(
+            name = "Map 6"
+    )
+    public boolean map6 = false;
 
-    // Method to save the state of each switch
-    public void saveSwitchStates() {
-        onToggle("Map 1", map1);
-        onToggle("Map 2", map2);
-        onToggle("Map 3", map3);
-        onToggle("Map 4", map4);
-    }
+    @Switch(
+            name = "Map 7"
+    )
+    public boolean map7 = false;
+
+    @Switch(
+            name = "Map 8"
+    )
+    public boolean map8 = false;
+
+    @Switch(
+            name = "Map 9"
+    )
+    public boolean map9 = false;
+
+    @Switch(
+            name = "Map 10"
+    )
+    public boolean map10 = false;
+
+    @Switch(
+            name = "Map 11"
+    )
+    public boolean map11 = false;
+
+    @Switch(
+            name = "Map 12"
+    )
+    public boolean map12 = false;
 }

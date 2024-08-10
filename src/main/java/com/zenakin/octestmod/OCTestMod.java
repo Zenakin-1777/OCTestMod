@@ -4,6 +4,7 @@ import cc.polyfrost.oneconfig.config.annotations.Switch;
 import cc.polyfrost.oneconfig.config.data.OptionSize;
 import com.zenakin.octestmod.config.TestConfig;
 import cc.polyfrost.oneconfig.events.event.InitializationEvent;
+import com.zenakin.octestmod.hud.GameStateDisplay;
 import net.minecraft.client.Minecraft;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.scoreboard.ScoreObjective;
@@ -39,7 +40,7 @@ public class OCTestMod {
         System.out.println("Mod Initializing...");
     }
 
-    private String getCurrentAreaFromScoreboard() {
+    private static String getCurrentAreaFromScoreboard() {
         Scoreboard scoreboard = Minecraft.getMinecraft().theWorld.getScoreboard();
         ScoreObjective objective = scoreboard.getObjectiveInDisplaySlot(1);
         if (objective != null) {
@@ -48,8 +49,9 @@ public class OCTestMod {
         return null;
     }
 
-    public boolean isInBedwarsGame() {
+    public static boolean isInBedwarsGame() {
         String currentArea = getCurrentAreaFromScoreboard();
-        return currentArea != null && currentArea.toLowerCase().contains("map: ") && currentArea.toLowerCase().contains("bed wars");
+        //TODO: Fix and add -> && currentArea.toLowerCase().contains("map: ")
+        return currentArea != null && currentArea.toLowerCase().contains("bed wars");
     }
 }

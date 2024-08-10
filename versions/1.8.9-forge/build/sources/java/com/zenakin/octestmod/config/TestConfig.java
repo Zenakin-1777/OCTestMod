@@ -41,7 +41,7 @@ public class TestConfig extends Config {
     @HUD(
             name = "Display current gamemode"
     )
-    public GameStateDisplay hud2 = new GameStateDisplay();
+    public GameStateDisplay hud = new GameStateDisplay();
 
     @Page(
             name = "Map Blacklist",
