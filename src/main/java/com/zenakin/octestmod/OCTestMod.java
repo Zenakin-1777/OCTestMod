@@ -2,6 +2,8 @@ package com.zenakin.octestmod;
 
 import cc.polyfrost.oneconfig.config.annotations.Switch;
 import cc.polyfrost.oneconfig.config.data.OptionSize;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -14,8 +16,10 @@ import net.minecraft.command.ICommandSender;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.scoreboard.Score;
 import net.minecraft.scoreboard.ScoreObjective;
+import net.minecraft.scoreboard.ScorePlayerTeam;
 import net.minecraft.scoreboard.Scoreboard;
 import net.minecraft.util.ChatComponentText;
+import net.minecraft.util.StringUtils;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
 import cc.polyfrost.oneconfig.utils.commands.CommandManager;
@@ -29,6 +33,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * The entrypoint of the Example Mod that initializes it.
@@ -68,6 +73,7 @@ public class OCTestMod {
                     if (isMapBlacklisted()) {
                         Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("NON-IDEAL LOBBY, DODGE RECOMMENDED!"));
                     } else {
+                        Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("Passed initial check (Map Blacklist), moving onto player check!"));
                         for (String playerName : getPlayersInTabList()) {
                             if (getPlayersInTabList().contains(playerName)) continue;
                             getPlayersInTabList().add(playerName);
@@ -134,34 +140,61 @@ public class OCTestMod {
         return null;
     }
 
-    private static String getCurrentMapFromScoreboard() {
-        Scoreboard scoreboard = Minecraft.getMinecraft().theWorld.getScoreboard();
-        ScoreObjective objective = scoreboard.getObjectiveInDisplaySlot(1);
+    public static String getCurrentMapFromScoreboard() {
+        List<String> scoreboardDetails = getSidebarLines();
+        String mapName = null;
+        for (String s : scoreboardDetails) {
+            String sCleaned = cleanSB(s);
 
-        if (objective != null) {
-            Collection<Score> scores = scoreboard.getSortedScores(objective);
-
-            for (Score score : scores) {
-                String scoreText = score.getPlayerName();
-                scoreText = scoreText.replaceAll("§.", "").toLowerCase();
-
-                if (scoreText.startsWith("map: ")) {
-                    // Extracts the map name after "map: "
-                    return scoreText.substring(5).trim();
-                }
+            if (sCleaned.contains("Map: ")) {
+                mapName = sCleaned.substring(5).trim();
             }
         }
+        //TODO: DEBUGGING (1) -
+        Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("Map: " + mapName));
+        return mapName;
+    }
 
-        return null;
+    // cleanSB() and getSidebarLines() are taken from Dungeon Rooms Mod by Quantizr(_risk) who used some code from Danker's Skyblock Mod under the GNU General Public License.
+    public static String cleanSB(String scoreboard) {
+        char[] nvString = StringUtils.stripControlCodes(scoreboard).toCharArray();
+        StringBuilder cleaned = new StringBuilder();
+
+        for (char c : nvString) {
+            if ((int) c > 20 && (int) c < 127) {
+                cleaned.append(c);
+            }
+        }
+        return cleaned.toString();
+    }
+
+    public static List<String> getSidebarLines() {
+        List<String> lines = new ArrayList<>();
+        Scoreboard scoreboard = Minecraft.getMinecraft().theWorld.getScoreboard();
+        ScoreObjective objective = scoreboard.getObjectiveInDisplaySlot(1);
+        Collection<Score> scores = scoreboard.getSortedScores(objective);
+        List<Score> list = scores.stream()
+                .filter(input -> input != null && input.getPlayerName() != null && !input.getPlayerName().startsWith("#"))
+                .collect(Collectors.toList());
+
+        if (list.size() > 15) {
+            scores = Lists.newArrayList(Iterables.skip(list, scores.size() - 15));
+        } else {
+            scores = list;
+        }
+
+        for (Score score : scores) {
+            ScorePlayerTeam team = scoreboard.getPlayersTeam(score.getPlayerName());
+            lines.add(ScorePlayerTeam.formatPlayerName(team, score.getPlayerName()));
+        }
+
+        return lines;
     }
 
     public static boolean isInBedwarsGame() {
         String currentArea = getCurrentAreaFromScoreboard();
         String currentMap = getCurrentMapFromScoreboard();
-        //TODO: DEBUGGING LINE (1 below):
-        //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("Map: " + currentMap + " | Area: " + currentArea));
-        // && currentMap != null
-        return currentArea != null && currentArea.toLowerCase().contains("bed wars");
+        return currentArea != null && currentMap != null && currentArea.toLowerCase().contains("bed wars");
     }
 
     public boolean isMapBlacklisted() {
