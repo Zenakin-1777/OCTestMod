@@ -143,6 +143,8 @@ public class OCTestMod {
 
             for (Score score : scores) {
                 String scoreText = score.getPlayerName();
+                scoreText = scoreText.replaceAll("§.", "").toLowerCase();
+
                 if (scoreText.startsWith("map: ")) {
                     // Extracts the map name after "map: "
                     return scoreText.substring(5).trim();
@@ -156,7 +158,10 @@ public class OCTestMod {
     public static boolean isInBedwarsGame() {
         String currentArea = getCurrentAreaFromScoreboard();
         String currentMap = getCurrentMapFromScoreboard();
-        return currentArea != null && currentMap != null && currentArea.toLowerCase().contains("bed wars");
+        //TODO: DEBUGGING LINE (1 below):
+        //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("Map: " + currentMap + " | Area: " + currentArea));
+        // && currentMap != null
+        return currentArea != null && currentArea.toLowerCase().contains("bed wars");
     }
 
     public boolean isMapBlacklisted() {

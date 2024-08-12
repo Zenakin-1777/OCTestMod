@@ -20,16 +20,16 @@ public class TestConfig extends Config {
 
     @Switch(
             name = "Main Toggle",
-            size = OptionSize.SINGLE
+            size = OptionSize.DUAL
     )
-    public boolean isModEnabled = true; // The default value for the boolean Switch.
+    public static boolean isModEnabled = true; // The default value for the boolean Switch.
 
     @Number(
             name = "Bedwars stars level threshold",
             min = 10, max = 5000,
-            step = 50
+            step = 25
     )
-    public int starThreshold = 150; // default value
+    public static int starThreshold = 150; // default value
 
     @Text(
             name = "Hypixel API Key",
@@ -72,7 +72,7 @@ public class TestConfig extends Config {
          */
         initialize();
 
-        instance = this;
+        OCTestMod.instance.config = this;
     }
 }
 

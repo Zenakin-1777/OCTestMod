@@ -17,9 +17,9 @@ public class GameStateDisplay extends SingleTextHud {
 
     @Override
     public String getText(boolean example) {
-        if (OCTestMod.isInBedwarsGame() && TestConfig.instance.isModEnabled) {
+        if (OCTestMod.isInBedwarsGame() && TestConfig.isModEnabled) {
             return "Currently in Bedwars!";
-        } else if (!OCTestMod.isInBedwarsGame() && TestConfig.instance.isModEnabled) {
+        } else if (!OCTestMod.isInBedwarsGame() && TestConfig.isModEnabled) {
             return "Currently not in Bedwars..";
         } else {
             return "Mod Dissabled";

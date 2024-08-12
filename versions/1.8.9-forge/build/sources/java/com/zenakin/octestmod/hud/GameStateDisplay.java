@@ -1,6 +1,5 @@
 package com.zenakin.octestmod.hud;
 
-import cc.polyfrost.oneconfig.config.core.OneColor;
 import cc.polyfrost.oneconfig.hud.SingleTextHud;
 import com.zenakin.octestmod.OCTestMod;
 import com.zenakin.octestmod.config.TestConfig;
@@ -11,23 +10,18 @@ import com.zenakin.octestmod.config.TestConfig;
  * @see TestConfig#hud
  */
 public class GameStateDisplay extends SingleTextHud {
-    //OCTestMod mod = new OCTestMod();
-    public int gameState;
 
     public GameStateDisplay() {
-        super(" ", true);
+        super("STATUS", true);
     }
 
     @Override
     public String getText(boolean example) {
-        if (OCTestMod.isInBedwarsGame() && TestConfig.instance.isModEnabled) {
-            gameState = 1;
+        if (OCTestMod.isInBedwarsGame() && TestConfig.isModEnabled) {
             return "Currently in Bedwars!";
-        } else if (!OCTestMod.isInBedwarsGame() && TestConfig.instance.isModEnabled) {
-            gameState = 2;
+        } else if (!OCTestMod.isInBedwarsGame() && TestConfig.isModEnabled) {
             return "Currently not in Bedwars..";
         } else {
-            gameState = 0;
             return "Mod Dissabled";
         }
     }
