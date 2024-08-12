@@ -4,62 +4,132 @@ import cc.polyfrost.oneconfig.config.annotations.Switch;
 
 public class MapBlacklistPage {
     @Switch(
-            name = "Map 1"
+            name = "Aqil"
     )
-    public boolean map1 = false;
+    public static boolean map1 = false;
 
     @Switch(
-            name = "Map 2"
+            name = "Dockyard"
     )
-    public boolean map2 = false;
+    public static boolean map2 = false;
 
     @Switch(
-            name = "Map 3"
+            name = "Rooted"
     )
-    public boolean map3 = false;
+    public static boolean map3 = false;
 
     @Switch(
-            name = "Map 4"
+            name = "Aetius"
     )
-    public boolean map4 = false;
+    public static boolean map4 = false;
 
     @Switch(
-            name = "Map 5"
+            name = "Arid"
     )
-    public boolean map5 = false;
+    public static boolean map5 = false;
 
     @Switch(
-            name = "Map 6"
+            name = "Casita"
     )
-    public boolean map6 = false;
+    public static boolean map6 = false;
 
     @Switch(
-            name = "Map 7"
+            name = "Fruitbrawl"
     )
-    public boolean map7 = false;
+    public static boolean map7 = false;
 
     @Switch(
-            name = "Map 8"
+            name = "Gelato"
     )
-    public boolean map8 = false;
+    public static boolean map8 = false;
 
     @Switch(
-            name = "Map 9"
+            name = "Keep"
     )
-    public boolean map9 = false;
+    public static boolean map9 = false;
 
     @Switch(
-            name = "Map 10"
+            name = "Montipora"
     )
-    public boolean map10 = false;
+    public static boolean map10 = false;
 
     @Switch(
-            name = "Map 11"
+            name = "Nebuc"
     )
-    public boolean map11 = false;
+    public static boolean map11 = false;
 
     @Switch(
-            name = "Map 12"
+            name = "Retreat"
     )
-    public boolean map12 = false;
+    public static boolean map12 = false;
+
+    @Switch(
+            name = "Vigilante"
+    )
+    public static boolean map13 = false;
+
+    @Switch(
+            name = "Amazon"
+    )
+    public static boolean map14 = false;
+
+    @Switch(
+            name = "Ashfire"
+    )
+    public static boolean map15 = false;
+
+    @Switch(
+            name = "Blossom"
+    )
+    public static boolean map16 = false;
+
+    @Switch(
+            name = "Gateway"
+    )
+    public static boolean map17 = false;
+
+    @Switch(
+            name = "Harvest"
+    )
+    public static boolean map18 = false;
+
+    @Switch(
+            name = "Ironclad"
+    )
+    public static boolean map19 = false;
+
+    @Switch(
+            name = "Lotus"
+    )
+    public static boolean map20 = false;
+
+    @Switch(
+            name = "Mirage"
+    )
+    public static boolean map21 = false;
+
+    @Switch(
+            name = "Pernicious"
+    )
+    public static boolean map22 = false;
+
+    @Switch(
+            name = "Hollow"
+    )
+    public static boolean map23 = false;
+
+    @Switch(
+            name = "Scorched Sands"
+    )
+    public static boolean map24 = false;
+
+    @Switch(
+            name = "Waterfall"
+    )
+    public static boolean map25 = false;
+
+    @Switch(
+            name = "Arcade"
+    )
+    public static boolean map26 = false;
 }
