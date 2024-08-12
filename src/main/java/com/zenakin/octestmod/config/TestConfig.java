@@ -31,6 +31,13 @@ public class TestConfig extends Config {
     )
     public static int starThreshold = 150; // default value
 
+    @Slider(
+            name = "Time between scans",
+            min = 1f, max = 120f, // Minimum and maximum values for the slider.
+            step = 10 // The amount of steps that the slider should have.
+    )
+    public static float scanInterval = 5f;
+
     @Text(
             name = "Hypixel API Key",
             placeholder = "Paste your API key here",

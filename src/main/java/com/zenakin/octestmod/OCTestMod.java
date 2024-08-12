@@ -26,6 +26,8 @@ import cc.polyfrost.oneconfig.utils.commands.CommandManager;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.PlayerEvent;
+import net.minecraftforge.fml.common.gameevent.TickEvent;
+import net.minecraftforge.fml.common.network.FMLNetworkEvent;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -34,6 +36,9 @@ import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * The entrypoint of the Example Mod that initializes it.
@@ -51,29 +56,34 @@ public class OCTestMod {
     @Mod.Instance(MODID)
     public static OCTestMod instance;
     public TestConfig config;
+    private int tickCounter = 0;
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     // Register the config and commands.
     @Mod.EventHandler
-    public void onInit(FMLInitializationEvent event) {
+    public void init(FMLInitializationEvent event) {
         config = new TestConfig();
         MinecraftForge.EVENT_BUS.register(this);
         MinecraftForge.EVENT_BUS.register(new PlayerLoginHandler());
-        System.out.println("Mod Initializing...");
     }
 
+    /* OLD:
     public class PlayerLoginHandler {
         @SubscribeEvent
         public void onPlayerJoin(PlayerEvent.PlayerLoggedInEvent event) {
+            Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("Someone has joined the lobby.."));
             if (!OCTestMod.instance.config.isModEnabled || !isInBedwarsGame()) return;
+            Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("Passed initial checks (Mod State + In Game Check), moving onto map check!"));
 
             Timer timer = new Timer();
             timer.scheduleAtFixedRate(new TimerTask() {
                 @Override
                 public void run() {
                     if (isMapBlacklisted()) {
-                        Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("NON-IDEAL LOBBY, DODGE RECOMMENDED!"));
+                        String mapName = getCurrentMapFromScoreboard();
+                        Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("NON-IDEAL LOBBY, DODGE RECOMMENDED! Cause: Blacklisted map - " + mapName));
                     } else {
-                        Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("Passed initial check (Map Blacklist), moving onto player check!"));
+                        Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("Passed secondary check (Map Blacklist), moving onto player check!"));
                         for (String playerName : getPlayersInTabList()) {
                             if (getPlayersInTabList().contains(playerName)) continue;
                             getPlayersInTabList().add(playerName);
@@ -90,7 +100,55 @@ public class OCTestMod {
                         }
                     }
                 }
-            }, 0, 15000); // 15 seconds
+            }, 0, 10000); // 10 seconds
+        }
+    }
+     */
+
+    public class PlayerLoginHandler {
+        @SubscribeEvent
+        public void onPlayerLogin(FMLNetworkEvent.ClientConnectedToServerEvent  event) {
+            new Timer().schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    // Ensure Minecraft client and player are not null
+                    if (Minecraft.getMinecraft().thePlayer != null) {
+                        Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("Logged into server! Starting checks..."));
+                        startPeriodicChecks();
+                    }
+                }
+            }, 3000);
+        }
+    }
+
+    public void startPeriodicChecks() {
+        scheduler.scheduleAtFixedRate(this::performChecks, 0, (long) TestConfig.scanInterval, TimeUnit.SECONDS);
+    }
+
+    private void performChecks() {
+        if (!TestConfig.isModEnabled || !isInBedwarsGame()) return;
+
+        Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("Passed initial checks (Mod State + In Game Check), moving onto map check!"));
+
+        if (isMapBlacklisted()) {
+            String mapName = getCurrentMapFromScoreboard();
+            Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("NON-IDEAL LOBBY, DODGE RECOMMENDED! Cause: Blacklisted map - " + mapName));
+        } else {
+            Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("Passed secondary check (Map Blacklist), moving onto player check!"));
+            for (String playerName : getPlayersInTabList()) {
+                if (getPlayersInTabList().contains(playerName)) continue;
+                getPlayersInTabList().add(playerName);
+
+                try {
+                    JsonObject playerData = getPlayerData(playerName);
+                    int bedwarsLevel = getBedwarsLevel(playerData);
+                    if (bedwarsLevel >= TestConfig.starThreshold) {
+                        notifyUser(playerName, bedwarsLevel);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
@@ -133,11 +191,14 @@ public class OCTestMod {
 
     private static String getCurrentAreaFromScoreboard() {
         Scoreboard scoreboard = Minecraft.getMinecraft().theWorld.getScoreboard();
-        ScoreObjective objective = scoreboard.getObjectiveInDisplaySlot(1);
-        if (objective != null) {
-            return objective.getDisplayName();
+        if (scoreboard != null) {
+            ScoreObjective objective = scoreboard.getObjectiveInDisplaySlot(1);
+            if (objective != null) {
+                return objective.getDisplayName();
+            }
+            return null;
         }
-        return null;
+        return  null;
     }
 
     public static String getCurrentMapFromScoreboard() {
@@ -150,8 +211,6 @@ public class OCTestMod {
                 mapName = sCleaned.substring(5).trim();
             }
         }
-        //TODO: DEBUGGING (1) -
-        Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("Map: " + mapName));
         return mapName;
     }
 
@@ -171,7 +230,9 @@ public class OCTestMod {
     public static List<String> getSidebarLines() {
         List<String> lines = new ArrayList<>();
         Scoreboard scoreboard = Minecraft.getMinecraft().theWorld.getScoreboard();
+        if (scoreboard == null) return null;
         ScoreObjective objective = scoreboard.getObjectiveInDisplaySlot(1);
+        if (objective == null) return null;
         Collection<Score> scores = scoreboard.getSortedScores(objective);
         List<Score> list = scores.stream()
                 .filter(input -> input != null && input.getPlayerName() != null && !input.getPlayerName().startsWith("#"))
@@ -198,7 +259,14 @@ public class OCTestMod {
     }
 
     public boolean isMapBlacklisted() {
-        switch (Objects.requireNonNull(getCurrentMapFromScoreboard())) {
+        String map = getCurrentMapFromScoreboard();
+        if (map == null) {
+            return false;
+        }
+
+        map = map.trim();
+
+        switch (map) {
             case "Aqil":
                 return MapBlacklistPage.map1;
             case "Dockyard":
