@@ -23,6 +23,7 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.ChatStyle;
 import net.minecraft.util.StringUtils;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.fml.common.Mod;
 import cc.polyfrost.oneconfig.utils.commands.CommandManager;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
@@ -58,6 +59,7 @@ public class OCTestMod {
     @Mod.Instance(MODID)
     public static OCTestMod instance;
     public TestConfig config;
+    public String displayMessage;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     // Register the config and commands.
@@ -69,6 +71,7 @@ public class OCTestMod {
     }
 
     public class PlayerLoginHandler {
+        /* DEPRECATED:
         @SubscribeEvent
         public void onPlayerLogin(FMLNetworkEvent.ClientConnectedToServerEvent  event) {
             new Timer().schedule(new TimerTask() {
@@ -80,29 +83,57 @@ public class OCTestMod {
                         startPeriodicChecks();
                     }
                 }
-            }, 3000);
+            }, 5000);
+        }
+         */
+
+        @SubscribeEvent
+        public void onWorldLoad(WorldEvent.Load event) {
+            new Timer().schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    ChatComponentText message0 = new ChatComponentText("World updated! Starting checks...");
+                    ChatStyle style = new ChatStyle()
+                            .setColor(EnumChatFormatting.LIGHT_PURPLE)
+                            .setBold(true)
+                            .setItalic(true)
+                            .setUnderlined(true);
+                    message0.setChatStyle(style);
+                    Minecraft.getMinecraft().thePlayer.addChatMessage(message0);
+                    startPeriodicChecks();
+                }
+            }, 4000);
+
         }
     }
 
+
+
     public void startPeriodicChecks() {
-        scheduler.scheduleAtFixedRate(this::performChecks, 0, (long) TestConfig.scanInterval, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(this::performChecks, 1, (long) TestConfig.scanInterval, TimeUnit.SECONDS);
+        //DEBUGGING: Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(-/3) Started preiodic scheduler"));
     }
 
     private void performChecks() {
+        //DEBUGGING: Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(0/3) Beginning initial checks.."));
         if (!TestConfig.isModEnabled || !isInBedwarsGame()) return;
 
-        ChatComponentText message = new ChatComponentText("Passed initial checks (Mod State + In Game Check), moving onto map check!");
+        /* DEBUGGING:
+        ChatComponentText message = new ChatComponentText("(1/3) Passed initial checks (Mod State + In Game Check), moving onto map check!");
         message.setChatStyle(new ChatStyle().setColor(EnumChatFormatting.GREEN));
         Minecraft.getMinecraft().thePlayer.addChatMessage(message);
+         */
+        displayMessage = "Good lobby so far..";
 
         if (isMapBlacklisted()) {
             String mapName = getCurrentMapFromScoreboard();
-            String causeName = "Blacklisted Map: ";
-            notifyUser(causeName, mapName, 0);
+            displayMessage = "BLACKLISTED MAP: " + mapName;
         } else {
-            ChatComponentText message2 = new ChatComponentText("Passed secondary check (Map Blacklist), moving onto player check!");
+            /* DEBUGGING:
+            ChatComponentText message2 = new ChatComponentText("(2/3) Passed secondary check (Map Blacklist), moving onto player check!");
             message2.setChatStyle(new ChatStyle().setColor(EnumChatFormatting.GREEN));
             Minecraft.getMinecraft().thePlayer.addChatMessage(message2);
+             */
 
             for (String playerName : getPlayersInTabList()) {
                 if (getPlayersInTabList().contains(playerName)) continue;
@@ -112,8 +143,7 @@ public class OCTestMod {
                     JsonObject playerData = getPlayerData(playerName);
                     int bedwarsLevel = getBedwarsLevel(playerData);
                     if (bedwarsLevel >= TestConfig.starThreshold) {
-                        String causeName = "Player: ";
-                        notifyUser(causeName, playerName, bedwarsLevel);
+                        displayMessage = "HIGH LEVEL PLAYER: " + playerName + " - " + bedwarsLevel;
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -155,12 +185,13 @@ public class OCTestMod {
         return scannedPlayers;
     }
 
-    private void notifyUser(String causeName, String cause, int bedwarsLevel) {
-        //TODO: MAKE THIS INTO A HUD COMPONENT vvv
+    /* DEPRECATED:
+    public void notifyUser(String causeName, String cause, int bedwarsLevel) {
         ChatComponentText message3 = new ChatComponentText("NON-IDEAL LOBBY, DODGE RECOMMENDED! Cause - " + causeName + cause + " " + bedwarsLevel);
         message3.setChatStyle(new ChatStyle().setColor(EnumChatFormatting.RED));
         Minecraft.getMinecraft().thePlayer.addChatMessage(message3);
     }
+     */
 
     private static String getCurrentAreaFromScoreboard() {
         Scoreboard scoreboard = Minecraft.getMinecraft().theWorld.getScoreboard();
