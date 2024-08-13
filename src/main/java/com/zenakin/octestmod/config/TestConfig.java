@@ -22,19 +22,19 @@ public class TestConfig extends Config {
             name = "Main Toggle",
             size = OptionSize.DUAL
     )
-    public static boolean isModEnabled = true; // The default value for the boolean Switch.
+    public static boolean isModEnabled = true;
 
     @Number(
             name = "Bedwars stars level threshold",
             min = 10, max = 5000,
             step = 25
     )
-    public static int starThreshold = 150; // default value
+    public static int starThreshold = 150;
 
     @Slider(
             name = "Time between scans",
-            min = 1f, max = 120f, // Minimum and maximum values for the slider.
-            step = 10 // The amount of steps that the slider should have.
+            min = 1f, max = 200f,
+            step = 40
     )
     public static float scanInterval = 5f;
 
@@ -73,6 +73,7 @@ public class TestConfig extends Config {
 */
     public TestConfig() {
         super(new Mod(OCTestMod.NAME, ModType.UTIL_QOL), OCTestMod.MODID + ".json");
+        //TODO: MAKE THIS WORK vvv
         /* NOT WORKING!!!!!
         this.addDependency("hud", () -> isModEnabled);
         this.hideIf("hud2", () -> !isModEnabled);

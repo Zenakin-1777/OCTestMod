@@ -19,6 +19,8 @@ import net.minecraft.scoreboard.ScoreObjective;
 import net.minecraft.scoreboard.ScorePlayerTeam;
 import net.minecraft.scoreboard.Scoreboard;
 import net.minecraft.util.ChatComponentText;
+import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.ChatStyle;
 import net.minecraft.util.StringUtils;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
@@ -56,7 +58,6 @@ public class OCTestMod {
     @Mod.Instance(MODID)
     public static OCTestMod instance;
     public TestConfig config;
-    private int tickCounter = 0;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     // Register the config and commands.
@@ -66,44 +67,6 @@ public class OCTestMod {
         MinecraftForge.EVENT_BUS.register(this);
         MinecraftForge.EVENT_BUS.register(new PlayerLoginHandler());
     }
-
-    /* OLD:
-    public class PlayerLoginHandler {
-        @SubscribeEvent
-        public void onPlayerJoin(PlayerEvent.PlayerLoggedInEvent event) {
-            Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("Someone has joined the lobby.."));
-            if (!OCTestMod.instance.config.isModEnabled || !isInBedwarsGame()) return;
-            Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("Passed initial checks (Mod State + In Game Check), moving onto map check!"));
-
-            Timer timer = new Timer();
-            timer.scheduleAtFixedRate(new TimerTask() {
-                @Override
-                public void run() {
-                    if (isMapBlacklisted()) {
-                        String mapName = getCurrentMapFromScoreboard();
-                        Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("NON-IDEAL LOBBY, DODGE RECOMMENDED! Cause: Blacklisted map - " + mapName));
-                    } else {
-                        Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("Passed secondary check (Map Blacklist), moving onto player check!"));
-                        for (String playerName : getPlayersInTabList()) {
-                            if (getPlayersInTabList().contains(playerName)) continue;
-                            getPlayersInTabList().add(playerName);
-
-                            try {
-                                JsonObject playerData = getPlayerData(playerName);
-                                int bedwarsLevel = getBedwarsLevel(playerData);
-                                if (bedwarsLevel >= OCTestMod.instance.config.starThreshold) {
-                                    notifyUser(playerName, bedwarsLevel);
-                                }
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            } //TODO: Wipe players list on world change.
-                        }
-                    }
-                }
-            }, 0, 10000); // 10 seconds
-        }
-    }
-     */
 
     public class PlayerLoginHandler {
         @SubscribeEvent
@@ -128,13 +91,19 @@ public class OCTestMod {
     private void performChecks() {
         if (!TestConfig.isModEnabled || !isInBedwarsGame()) return;
 
-        Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("Passed initial checks (Mod State + In Game Check), moving onto map check!"));
+        ChatComponentText message = new ChatComponentText("Passed initial checks (Mod State + In Game Check), moving onto map check!");
+        message.setChatStyle(new ChatStyle().setColor(EnumChatFormatting.GREEN));
+        Minecraft.getMinecraft().thePlayer.addChatMessage(message);
 
         if (isMapBlacklisted()) {
             String mapName = getCurrentMapFromScoreboard();
-            Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("NON-IDEAL LOBBY, DODGE RECOMMENDED! Cause: Blacklisted map - " + mapName));
+            String causeName = "Blacklisted Map: ";
+            notifyUser(causeName, mapName, 0);
         } else {
-            Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("Passed secondary check (Map Blacklist), moving onto player check!"));
+            ChatComponentText message2 = new ChatComponentText("Passed secondary check (Map Blacklist), moving onto player check!");
+            message2.setChatStyle(new ChatStyle().setColor(EnumChatFormatting.GREEN));
+            Minecraft.getMinecraft().thePlayer.addChatMessage(message2);
+
             for (String playerName : getPlayersInTabList()) {
                 if (getPlayersInTabList().contains(playerName)) continue;
                 getPlayersInTabList().add(playerName);
@@ -143,7 +112,8 @@ public class OCTestMod {
                     JsonObject playerData = getPlayerData(playerName);
                     int bedwarsLevel = getBedwarsLevel(playerData);
                     if (bedwarsLevel >= TestConfig.starThreshold) {
-                        notifyUser(playerName, bedwarsLevel);
+                        String causeName = "Player: ";
+                        notifyUser(causeName, playerName, bedwarsLevel);
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -185,8 +155,11 @@ public class OCTestMod {
         return scannedPlayers;
     }
 
-    private void notifyUser(String playerName, int bedwarsLevel) {
-        Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("NON-IDEAL LOBBY, DODGE RECOMMENDED! Cause: " + playerName + " LVL: " + bedwarsLevel));
+    private void notifyUser(String causeName, String cause, int bedwarsLevel) {
+        //TODO: MAKE THIS INTO A HUD COMPONENT vvv
+        ChatComponentText message3 = new ChatComponentText("NON-IDEAL LOBBY, DODGE RECOMMENDED! Cause - " + causeName + cause + " " + bedwarsLevel);
+        message3.setChatStyle(new ChatStyle().setColor(EnumChatFormatting.RED));
+        Minecraft.getMinecraft().thePlayer.addChatMessage(message3);
     }
 
     private static String getCurrentAreaFromScoreboard() {
@@ -194,7 +167,8 @@ public class OCTestMod {
         if (scoreboard != null) {
             ScoreObjective objective = scoreboard.getObjectiveInDisplaySlot(1);
             if (objective != null) {
-                return objective.getDisplayName();
+                String obj = objective.getDisplayName();
+                return cleanSB(obj);
             }
             return null;
         }
