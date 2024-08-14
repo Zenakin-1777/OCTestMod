@@ -136,16 +136,26 @@ public class OCTestMod {
              */
 
             for (String playerName : getPlayersInTabList()) {
-                if (getPlayersInTabList().contains(playerName)) continue;
-                getPlayersInTabList().add(playerName);
+                //Necessary??: if (getPlayersInTabList().contains(playerName)) continue;
+                //getPlayersInTabList().add(playerName);
+                //TODO: DEBUGGING (1) -
+                //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(0.5?) Adding player to PlayersInTabList list bc was absent: " + playerName));
 
                 try {
+                    //TODO: DEBUGGING (1) -
+                    //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(1.5) Passed player scanning, trying to get playerData"));
                     JsonObject playerData = getPlayerData(playerName);
+                    //TODO: DEBUGGING (1) -
+                    Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(6) Player data retrieved from API"));
                     int bedwarsLevel = getBedwarsLevel(playerData);
+                    //TODO: DEBUGGING (1) -
+                    Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(7) Bedwars level retrieved: " + bedwarsLevel));
                     if (bedwarsLevel >= TestConfig.starThreshold) {
                         displayMessage = "HIGH LEVEL PLAYER: " + playerName + " - " + bedwarsLevel;
                     }
                 } catch (Exception e) {
+                    //TODO: DEBUGGING (1) -
+                    Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(8?) ERROR: " + e));
                     e.printStackTrace();
                 }
             }
@@ -154,6 +164,8 @@ public class OCTestMod {
 
     private JsonObject getPlayerData(String playerName) throws Exception {
         String urlString = "https://api.hypixel.net/player?key=" + TestConfig.apiKey + "&name=" + playerName;
+        //TODO: DEBUGGING (1) -
+        //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(2) FETCHING FROM API: " + urlString));
         URL url = new URL(urlString);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("GET");
@@ -163,25 +175,34 @@ public class OCTestMod {
             String inputLine;
 
             while ((inputLine = in.readLine()) != null) {
+                //TODO: DEBUGGING (1) -
+                //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(3) Input Line Wasn't Null: " + inputLine));
                 response.append(inputLine);
             }
 
             JsonParser parser = new JsonParser();
             JsonElement jsonElement = parser.parse(response.toString());
+            //TODO: DEBUGGING (1) -
+            //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(4) Json Object supposedly returned."));
             return jsonElement.getAsJsonObject();
         }
     }
 
     private int getBedwarsLevel(JsonObject playerData) {
         JsonObject stats = playerData.getAsJsonObject("player").getAsJsonObject("stats").getAsJsonObject("Bedwars");
+        //TODO: DEBUGGING (1) -
+        Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(5) Retrieving bedwars level: " + stats.get("bedwars_level").toString()));
         return stats.get("bedwars_level").getAsInt();
     }
 
     public Set<String> getPlayersInTabList() {
         Set<String> scannedPlayers = ConcurrentHashMap.newKeySet();
         for (EntityPlayer player : Minecraft.getMinecraft().theWorld.playerEntities) {
+            //TODO: DEBUGGING (1) -
+            Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(0) ADDING PLAYERS TO LIST FROM TAB: " + player.getName()));
             scannedPlayers.add(player.getName());
         }
+        //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(1) PLAYERS ADDED TO LIST FROM TAB: " + scannedPlayers));
         return scannedPlayers;
     }
 

@@ -3,6 +3,8 @@ package com.zenakin.octestmod.hud;
 import cc.polyfrost.oneconfig.hud.SingleTextHud;
 import com.zenakin.octestmod.OCTestMod;
 import com.zenakin.octestmod.config.TestConfig;
+import net.minecraft.client.Minecraft;
+import net.minecraft.util.ChatComponentText;
 
 /**
  * An example OneConfig HUD that is started in the config and displays text.
@@ -18,7 +20,7 @@ public class GameStateDisplay extends SingleTextHud {
     @Override
     public String getText(boolean example) {
         if (OCTestMod.isInBedwarsGame() && TestConfig.isModEnabled) {
-            return "Currently in Bedwars!";
+            return OCTestMod.instance.displayMessage;
         } else if (!OCTestMod.isInBedwarsGame() && TestConfig.isModEnabled) {
             return "Currently not in Bedwars..";
         } else {

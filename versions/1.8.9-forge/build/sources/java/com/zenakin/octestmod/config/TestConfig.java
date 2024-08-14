@@ -34,7 +34,7 @@ public class TestConfig extends Config {
     @Slider(
             name = "Time between scans",
             min = 1f, max = 200f,
-            step = 40
+            step = 200
     )
     public static float scanInterval = 5f;
 
