@@ -61,6 +61,11 @@ public class OCTestMod {
     public TestConfig config;
     public String displayMessage;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    private final Map<String, JsonObject> playerDataCache = new ConcurrentHashMap<>();
+    private static final long CACHE_EXPIRY = TimeUnit.MINUTES.toMillis(TestConfig.cacheExpiry);
+    private final Map<String, Long> cacheTimestamps = new ConcurrentHashMap<>();
+    private static int REQUEST_DELAY_MS = TestConfig.requestInterval;
+    private long lastRequestTime = 0;
 
     // Register the config and commands.
     @Mod.EventHandler
@@ -100,23 +105,27 @@ public class OCTestMod {
                             .setUnderlined(true);
                     message0.setChatStyle(style);
                     Minecraft.getMinecraft().thePlayer.addChatMessage(message0);
-                    startPeriodicChecks();
+                    if (TestConfig.isModEnabled && isInBedwarsGame()) {
+                        startPeriodicChecks();
+                    }
+
                 }
             }, 4000);
 
         }
     }
 
-
-
     public void startPeriodicChecks() {
-        scheduler.scheduleAtFixedRate(this::performChecks, 1, (long) TestConfig.scanInterval, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(this::performChecks, 1, TestConfig.scanInterval, TimeUnit.SECONDS);
         //DEBUGGING: Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(-/3) Started preiodic scheduler"));
     }
 
     private void performChecks() {
         //DEBUGGING: Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(0/3) Beginning initial checks.."));
-        if (!TestConfig.isModEnabled || !isInBedwarsGame()) return;
+        if (!TestConfig.isModEnabled || !isInBedwarsGame()) {
+            displayMessage = "Check scoreboard and mod state";
+            return;
+        }
 
         /* DEBUGGING:
         ChatComponentText message = new ChatComponentText("(1/3) Passed initial checks (Mod State + In Game Check), moving onto map check!");
@@ -140,29 +149,53 @@ public class OCTestMod {
                 //getPlayersInTabList().add(playerName);
                 //TODO: DEBUGGING (1) -
                 //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(0.5?) Adding player to PlayersInTabList list bc was absent: " + playerName));
-
                 try {
-                    //TODO: DEBUGGING (1) -
-                    //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(1.5) Passed player scanning, trying to get playerData"));
-                    JsonObject playerData = getPlayerData(playerName);
-                    //TODO: DEBUGGING (1) -
-                    Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(6) Player data retrieved from API"));
-                    int bedwarsLevel = getBedwarsLevel(playerData);
-                    //TODO: DEBUGGING (1) -
-                    Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(7) Bedwars level retrieved: " + bedwarsLevel));
-                    if (bedwarsLevel >= TestConfig.starThreshold) {
-                        displayMessage = "HIGH LEVEL PLAYER: " + playerName + " - " + bedwarsLevel;
+                    //TODO: DEBUGGING (1 & 3) -
+                    //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(-) Checking Request Delay"));
+                performRequestWithDelay(() -> {
+                    //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(-) Finished Request Delay"));
+                    try {
+                            //TODO: DEBUGGING (1) -
+                            //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(1.5) Passed player scanning, trying to get playerData"));
+                            JsonObject playerData = getPlayerData(playerName);
+                            //TODO: DEBUGGING (1) -
+                            //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(6) Player data retrieved from API or cache"));
+                            int bedwarsLevel = getBedwarsLevel(playerData);
+                            //TODO: DEBUGGING (1) -
+                            //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(7) Bedwars level retrieved: " + bedwarsLevel));
+                            if (bedwarsLevel >= TestConfig.starThreshold) {
+                                displayMessage = "HIGH LEVEL PLAYER: " + playerName + " - " + bedwarsLevel;
+                            }
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
-                } catch (Exception e) {
-                    //TODO: DEBUGGING (1) -
-                    Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(8?) ERROR: " + e));
-                    e.printStackTrace();
-                }
+                });
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             }
         }
     }
 
+    private synchronized void performRequestWithDelay(Runnable requestTask) throws InterruptedException {
+        long currentTime = System.currentTimeMillis();
+        long timeSinceLastRequest = currentTime - lastRequestTime;
+
+        if (timeSinceLastRequest < REQUEST_DELAY_MS) {
+            Thread.sleep(REQUEST_DELAY_MS - timeSinceLastRequest);
+        }
+
+        requestTask.run();
+        lastRequestTime = System.currentTimeMillis();
+    }
+
     private JsonObject getPlayerData(String playerName) throws Exception {
+        long currentTime = System.currentTimeMillis();
+
+        if (playerDataCache.containsKey(playerName) && (currentTime - cacheTimestamps.get(playerName) < CACHE_EXPIRY)) {
+            return playerDataCache.get(playerName);
+        }
+
         String urlString = "https://api.hypixel.net/player?key=" + TestConfig.apiKey + "&name=" + playerName;
         //TODO: DEBUGGING (1) -
         //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(2) FETCHING FROM API: " + urlString));
@@ -182,16 +215,24 @@ public class OCTestMod {
 
             JsonParser parser = new JsonParser();
             JsonElement jsonElement = parser.parse(response.toString());
+            JsonObject playerData = jsonElement.getAsJsonObject();
+
+            playerDataCache.put(playerName, playerData);
+            cacheTimestamps.put(playerName, currentTime);
+
             //TODO: DEBUGGING (1) -
+            //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(-) Player Data Cached."));
             //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(4) Json Object supposedly returned."));
-            return jsonElement.getAsJsonObject();
+            return playerData;
         }
     }
 
     private int getBedwarsLevel(JsonObject playerData) {
-        JsonObject stats = playerData.getAsJsonObject("player").getAsJsonObject("stats").getAsJsonObject("Bedwars");
         //TODO: DEBUGGING (1) -
-        Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(5) Retrieving bedwars level: " + stats.get("bedwars_level").toString()));
+        //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(-) Identifying and separating BW level from stats"));
+        JsonObject stats = playerData.getAsJsonObject("player").getAsJsonObject("achievements");
+        //TODO: DEBUGGING (1) -
+        //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(5) Retrieving bedwars level: " + stats.get("bedwars_level").toString()));
         return stats.get("bedwars_level").getAsInt();
     }
 
@@ -199,7 +240,7 @@ public class OCTestMod {
         Set<String> scannedPlayers = ConcurrentHashMap.newKeySet();
         for (EntityPlayer player : Minecraft.getMinecraft().theWorld.playerEntities) {
             //TODO: DEBUGGING (1) -
-            Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(0) ADDING PLAYERS TO LIST FROM TAB: " + player.getName()));
+            //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(0) ADDING PLAYERS TO LIST FROM TAB: " + player.getName()));
             scannedPlayers.add(player.getName());
         }
         //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(1) PLAYERS ADDED TO LIST FROM TAB: " + scannedPlayers));
