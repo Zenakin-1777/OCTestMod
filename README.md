@@ -8,7 +8,7 @@ Credit:
 
 TODO:
 - can't change time between scans
-- stop repeating names on display, and clear list outside game?
+- stop repeating names on display
 - add sounds to ping if bad lobby
 - mod takes long time to scan lobbies, maybe make it more efficient?
 - add team name filter by /pl ing before starting?
