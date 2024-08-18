@@ -106,8 +106,8 @@ public class OCTestMod {
                             .setUnderlined(true);
                     message0.setChatStyle(style);
                     Minecraft.getMinecraft().thePlayer.addChatMessage(message0);
+                    BedwarsOverlayDisplay.playerStats.clear();
                     if (TestConfig.isModEnabled && isInBedwarsGame()) {
-                        BedwarsOverlayDisplay.playerStats.clear();
                         startPeriodicChecks();
                     }
 
