@@ -34,6 +34,13 @@ public class TestConfig extends Config {
     )
     public static int starThreshold = 150;
 
+    @Number(
+            name = "Bedwars win/loss ratio threshold",
+            description = "Maximum win/loss ratio an opponent can have before a lobby dodge is recommended",
+            size =  OptionSize.DUAL,
+            min = 0.01f, max = 5f
+    )
+    public static float wlrThreshold = 0.2f;
     /*
     @Checkbox(
             name = "Cache clear toggle",

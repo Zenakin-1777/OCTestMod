@@ -11,6 +11,7 @@ import com.zenakin.octestmod.config.TestConfig;
 import com.zenakin.octestmod.config.pages.MapBlacklistPage;
 import cc.polyfrost.oneconfig.events.event.InitializationEvent;
 import com.zenakin.octestmod.hud.GameStateDisplay;
+import com.zenakin.octestmod.utils.Triple;
 import net.minecraft.client.Minecraft;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.entity.player.EntityPlayer;
@@ -121,7 +122,13 @@ public class OCTestMod {
     }
 
     private void performChecks() {
+        //HashMap<String, Triple<JsonObject, Integer, String>> players = new HashMap<>();
         //DEBUGGING: Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(0/3) Beginning initial checks.."));
+        /*
+        if(TestConfig.isModEnabled && isInBedwarsMatch()) {
+            return
+        }
+        */
         if (!TestConfig.isModEnabled || !isInBedwarsGame()) {
             displayMessage = "Check scoreboard and mod state";
             return;
@@ -163,9 +170,30 @@ public class OCTestMod {
                             int bedwarsLevel = getBedwarsLevel(playerData);
                             //TODO: DEBUGGING (1) -
                             //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(7) Bedwars level retrieved: " + bedwarsLevel));
+
+                            /*
+                             * A bit of explanation:
+                             * X: playerName, easiest to search (might change to map later)
+                             * Y: json data, contains all the needed data,
+                             * Z: Reason they were flagged
+                             *  0: High level
+                             *  1: High WLR
+                             */
+
+
                             if (bedwarsLevel >= TestConfig.starThreshold) {
                                 displayMessage = "HIGH LEVEL PLAYER: " + playerName + " - " + bedwarsLevel;
+                                //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText(displayMessage));
+                                //players.put(playerName, new Triple<>(playerData, 0, String.valueOf(bedwarsLevel)));
                             }
+
+                            float wlr = (float) getStats(playerData, "wins_bedwars") /getStats(playerData, "losses_bedwars");
+                            if (wlr>= TestConfig.wlrThreshold){
+                                displayMessage = "HIGH SKILL PLAYER: " + playerName + " - " + round(wlr, 2);
+                                //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText(displayMessage));
+                                //players.put(playerName, new Triple<>(playerData, 1, String.valueOf(wlr)));
+                            }
+
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -235,6 +263,12 @@ public class OCTestMod {
         //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(5) Retrieving bedwars level: " + stats.get("bedwars_level").toString()));
         return stats.get("bedwars_level").getAsInt();
     }
+
+    private int getStats(JsonObject playerData, String stat){
+        JsonObject stats = getStats(playerData);
+        return stats.get(stat).getAsInt();
+    }
+    private JsonObject getStats(JsonObject playerData){return playerData.getAsJsonObject("player").getAsJsonObject("stats").getAsJsonObject("Bedwars");}
 
     public Set<String> getPlayersInTabList() {
         Set<String> scannedPlayers = ConcurrentHashMap.newKeySet();
@@ -389,5 +423,11 @@ public class OCTestMod {
             default:
                 return false; // Return false if the map name doesn't match any known maps
         }
+
+    }
+    private static float round(float val, int precision){
+        int tmp1 = (int) (val*Math.pow(10, precision));
+        return (float) tmp1 / (float) Math.pow(10, precision);
+
     }
 }
