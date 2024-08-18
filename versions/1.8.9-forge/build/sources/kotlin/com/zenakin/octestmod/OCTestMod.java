@@ -10,6 +10,7 @@ import com.google.gson.JsonParser;
 import com.zenakin.octestmod.config.TestConfig;
 import com.zenakin.octestmod.config.pages.MapBlacklistPage;
 import cc.polyfrost.oneconfig.events.event.InitializationEvent;
+import com.zenakin.octestmod.hud.BedwarsOverlayDisplay;
 import com.zenakin.octestmod.hud.GameStateDisplay;
 import net.minecraft.client.Minecraft;
 import net.minecraft.command.ICommandSender;
@@ -31,6 +32,7 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.PlayerEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.common.network.FMLNetworkEvent;
+import scala.tools.nsc.backend.icode.Primitives;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -64,7 +66,6 @@ public class OCTestMod {
     private final Map<String, JsonObject> playerDataCache = new ConcurrentHashMap<>();
     private static final long CACHE_EXPIRY = TimeUnit.MINUTES.toMillis(TestConfig.cacheExpiry);
     private final Map<String, Long> cacheTimestamps = new ConcurrentHashMap<>();
-    private static int REQUEST_DELAY_MS = TestConfig.requestInterval;
     private long lastRequestTime = 0;
 
     // Register the config and commands.
@@ -106,6 +107,7 @@ public class OCTestMod {
                     message0.setChatStyle(style);
                     Minecraft.getMinecraft().thePlayer.addChatMessage(message0);
                     if (TestConfig.isModEnabled && isInBedwarsGame()) {
+                        BedwarsOverlayDisplay.playerStats.clear();
                         startPeriodicChecks();
                     }
 
@@ -163,9 +165,13 @@ public class OCTestMod {
                             int bedwarsLevel = getBedwarsLevel(playerData);
                             //TODO: DEBUGGING (1) -
                             //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(7) Bedwars level retrieved: " + bedwarsLevel));
-                            if (bedwarsLevel >= TestConfig.starThreshold) {
-                                displayMessage = "HIGH LEVEL PLAYER: " + playerName + " - " + bedwarsLevel;
-                            }
+                            float bedwarsWLR = getBedwarsWLR(playerData);
+                            //TODO: DEBUGGING (1) -
+                            //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(7.5) Bedwars WLR retrieved: " + bedwarsWLR));
+                        if (bedwarsLevel >= TestConfig.starThreshold || bedwarsWLR >= TestConfig.wlrThreshold) {
+                            BedwarsOverlayDisplay.writeHUD(playerName, bedwarsLevel, bedwarsWLR);
+                            displayMessage = "HIGH LEVEL PLAYER: " + playerName + ": " + bedwarsLevel + " | " + bedwarsWLR;
+                        }
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -181,8 +187,8 @@ public class OCTestMod {
         long currentTime = System.currentTimeMillis();
         long timeSinceLastRequest = currentTime - lastRequestTime;
 
-        if (timeSinceLastRequest < REQUEST_DELAY_MS) {
-            Thread.sleep(REQUEST_DELAY_MS - timeSinceLastRequest);
+        if (timeSinceLastRequest < TestConfig.scanInterval) {
+            Thread.sleep(TestConfig.scanInterval - timeSinceLastRequest);
         }
 
         requestTask.run();
@@ -234,6 +240,17 @@ public class OCTestMod {
         //TODO: DEBUGGING (1) -
         //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(5) Retrieving bedwars level: " + stats.get("bedwars_level").toString()));
         return stats.get("bedwars_level").getAsInt();
+    }
+
+    private float getBedwarsWLR(JsonObject playerData) {
+        //TODO: DEBUGGING (1) -
+        //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(-) Identifying and separating BW WLR from stats"));
+        JsonObject stats = playerData.getAsJsonObject("player").getAsJsonObject("stats").getAsJsonObject("Bedwars");
+        int wins = stats.get("wins_bedwars").getAsInt();
+        int losses = stats.get("losses_bedwars").getAsInt();
+        //TODO: DEBUGGING (1) -
+        //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(5) Retrieving bedwars WLR: " + (float) (wins / losses)));
+        return (float) (wins / losses);
     }
 
     public Set<String> getPlayersInTabList() {
@@ -334,58 +351,126 @@ public class OCTestMod {
         map = map.trim();
 
         switch (map) {
-            case "Aqil":
+            case "Acropolis":
                 return MapBlacklistPage.map1;
-            case "Dockyard":
-                return MapBlacklistPage.map2;
-            case "Rooted":
-                return MapBlacklistPage.map3;
             case "Aetius":
-                return MapBlacklistPage.map4;
-            case "Arid":
-                return MapBlacklistPage.map5;
-            case "Casita":
-                return MapBlacklistPage.map6;
-            case "Fruitbrawl":
-                return MapBlacklistPage.map7;
-            case "Gelato":
-                return MapBlacklistPage.map8;
-            case "Keep":
-                return MapBlacklistPage.map9;
-            case "Montipora":
-                return MapBlacklistPage.map10;
-            case "Nebuc":
-                return MapBlacklistPage.map11;
-            case "Retreat":
-                return MapBlacklistPage.map12;
-            case "Vigilante":
-                return MapBlacklistPage.map13;
+                return MapBlacklistPage.map2;
+            case "Airshow":
+                return MapBlacklistPage.map3;
             case "Amazon":
-                return MapBlacklistPage.map14;
-            case "Ashfire":
-                return MapBlacklistPage.map15;
-            case "Blossom":
-                return MapBlacklistPage.map16;
-            case "Gateway":
-                return MapBlacklistPage.map17;
-            case "Harvest":
-                return MapBlacklistPage.map18;
-            case "Ironclad":
-                return MapBlacklistPage.map19;
-            case "Lotus":
-                return MapBlacklistPage.map20;
-            case "Mirage":
-                return MapBlacklistPage.map21;
-            case "Pernicious":
-                return MapBlacklistPage.map22;
-            case "Hollow":
-                return MapBlacklistPage.map23;
-            case "Scorched Sands":
-                return MapBlacklistPage.map24;
-            case "Waterfall":
-                return MapBlacklistPage.map25;
+                return MapBlacklistPage.map4;
+            case "Ambush":
+                return MapBlacklistPage.map5;
+            case "Apollo":
+                return MapBlacklistPage.map6;
             case "Arcade":
+                return MapBlacklistPage.map7;
+            case "Arid":
+                return MapBlacklistPage.map8;
+            case "Ashfire":
+                return MapBlacklistPage.map9;
+            case "Aqil":
+                return MapBlacklistPage.map10;
+            case "Bio-Hazard":
+                return MapBlacklistPage.map11;
+            case "Blossom":
+                return MapBlacklistPage.map12;
+            case "Cascade":
+                return MapBlacklistPage.map13;
+            case "Casita":
+                return MapBlacklistPage.map14;
+            case "Cliffside":
+                return MapBlacklistPage.map15;
+            case "Crogorm":
+                return MapBlacklistPage.map16;
+            case "Crypt":
+                return MapBlacklistPage.map17;
+            case "Deadwood":
+                return MapBlacklistPage.map18;
+            case "Dockyard":
+                return MapBlacklistPage.map19;
+            case "Dragon Light":
+                return MapBlacklistPage.map20;
+            case "Dragonstar":
+                return MapBlacklistPage.map21;
+            case "Gateway":
+                return MapBlacklistPage.map22;
+            case "Glacier":
+                return MapBlacklistPage.map23;
+            case "Hanging Gardens":
+                return MapBlacklistPage.map24;
+            case "Harvest":
+                return MapBlacklistPage.map25;
+            case "Hollow":
                 return MapBlacklistPage.map26;
+            case "Impere":
+                return MapBlacklistPage.map27;
+            case "Ironclad":
+                return MapBlacklistPage.map28;
+            case "Keep":
+                return MapBlacklistPage.map29;
+            case "Lightstone":
+                return MapBlacklistPage.map30;
+            case "Lighthouse":
+                return MapBlacklistPage.map31;
+            case "Lotus":
+                return MapBlacklistPage.map32;
+            case "Lucky Rush":
+                return MapBlacklistPage.map33;
+            case "Meso":
+                return MapBlacklistPage.map34;
+            case "Mirage":
+                return MapBlacklistPage.map35;
+            case "Nebuc":
+                return MapBlacklistPage.map36;
+            case "Orbit":
+                return MapBlacklistPage.map37;
+            case "Orchestra":
+                return MapBlacklistPage.map38;
+            case "Pavilion":
+                return MapBlacklistPage.map39;
+            case "Pernicious":
+                return MapBlacklistPage.map40;
+            case "Playground":
+                return MapBlacklistPage.map41;
+            case "Polygon":
+                return MapBlacklistPage.map42;
+            case "Rooted":
+                return MapBlacklistPage.map43;
+            case "Rooftop":
+                return MapBlacklistPage.map44;
+            case "Sanctum":
+                return MapBlacklistPage.map45;
+            case "Scorched Sands":
+                return MapBlacklistPage.map46;
+            case "Serenity":
+                return MapBlacklistPage.map47;
+            case "Siege":
+                return MapBlacklistPage.map48;
+            case "Sky Rise":
+                return MapBlacklistPage.map49;
+            case "Slumber":
+                return MapBlacklistPage.map50;
+            case "Solace":
+                return MapBlacklistPage.map51;
+            case "Speedway":
+                return MapBlacklistPage.map52;
+            case "Steampunk":
+                return MapBlacklistPage.map53;
+            case "Toro":
+                return MapBlacklistPage.map54;
+            case "Tuzi":
+                return MapBlacklistPage.map55;
+            case "Urban Plaza":
+                return MapBlacklistPage.map56;
+            case "Vigilante":
+                return MapBlacklistPage.map57;
+            case "Waterfall":
+                return MapBlacklistPage.map58;
+            case "Yue":
+                return MapBlacklistPage.map59;
+            case "Zarzul":
+                return MapBlacklistPage.map60;
             default:
                 return false; // Return false if the map name doesn't match any known maps
         }

@@ -4,6 +4,7 @@ import cc.polyfrost.oneconfig.config.annotations.*;
 import cc.polyfrost.oneconfig.config.annotations.Number;
 import cc.polyfrost.oneconfig.config.data.PageLocation;
 import com.zenakin.octestmod.OCTestMod;
+import com.zenakin.octestmod.hud.BedwarsOverlayDisplay;
 import com.zenakin.octestmod.hud.GameStateDisplay;
 import com.zenakin.octestmod.config.pages.MapBlacklistPage;
 import cc.polyfrost.oneconfig.config.Config;
@@ -26,13 +27,21 @@ public class TestConfig extends Config {
     public static boolean isModEnabled = true;
 
     @Number(
-            name = "Bedwars stars level threshold",
-            description = "Maximum bedwars stars an oponent can have before a lobby dodge is recommended",
+            name = "Bedwars stars threshold",
+            description = "Maximum level before a lobby dodge is recommended",
             size = OptionSize.DUAL,
             min = 10, max = 5000,
             step = 25
     )
     public static int starThreshold = 150;
+
+    @Number(
+            name = "Bedwars WLR threshold",
+            description = "Maximum WLR before a lobby dodge is recommended",
+            size = OptionSize.DUAL,
+            min = 0.0f, max = 10.0f
+    )
+    public static float wlrThreshold = 0.2f;
 
     /*
     @Checkbox(
@@ -76,9 +85,14 @@ public class TestConfig extends Config {
     public static String apiKey = "";
 
     @HUD(
-            name = "Display current gamemode"
+            name = "Display status"
     )
     public GameStateDisplay hud = new GameStateDisplay();
+
+    @HUD(
+            name = "Display Bedwars overlay"
+    )
+    public BedwarsOverlayDisplay hud2 = new BedwarsOverlayDisplay();
 
     @Page(
             name = "Map Blacklist",
