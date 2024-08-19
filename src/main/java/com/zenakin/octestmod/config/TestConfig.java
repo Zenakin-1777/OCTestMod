@@ -72,8 +72,8 @@ public class TestConfig extends Config {
     @Slider(
             name = "Time between scans",
             description = "The time in seconds to wait before performing the next lobby scan",
-            min = 1, max = 30,
-            step = 30
+            min = 1, max = 30.1f,
+            step = 1
     )
     public static int scanInterval = 5;
 
