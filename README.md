@@ -8,11 +8,9 @@ Credit:
 
 TODO:
 - can't change time between scans
-- stop repeating names on display
-- add sounds to ping if bad lobby
 - mod takes long time to scan lobbies, maybe make it more efficient?
 - add team name filter by /pl ing before starting?
-- add more stats (w/l ratio; bed breaks; finals; etc)to display
+- add more stats (bed breaks; finals; etc)to display
 - check for nicks (send /msg [username] and check for chat reply?)
 - stop the startup message from spamming
 - move HUD settings to new page seperate from other settings
