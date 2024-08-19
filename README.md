@@ -7,7 +7,6 @@ Credit:
 
 
 TODO:
-- can't change time between scans
 - mod takes long time to scan lobbies, maybe make it more efficient?
 - add team name filter by /pl ing before starting?
 - add more stats (bed breaks; finals; etc)to display
@@ -17,4 +16,6 @@ TODO:
 - indicate high level teams (maybe with letter prefix)
 - add compatibility with bridge (starting with duplicating the isInBedwars() method)
 - add sorting to playerlist
-- add colour changing status display
+- add a rate limit tracker (using RateLimit-Remaining)
+- fix dependancies not working (Overlay toggle, Cache Clear toggle)
+- fix HUD colour change (idk how make HUD change colour from code, but colour is alr there as OCTestMod.statusHudColour in the GameStateDisplay.java class)

@@ -1,6 +1,8 @@
 package com.zenakin.octestmod.hud;
 
+import cc.polyfrost.oneconfig.config.annotations.Color;
 import cc.polyfrost.oneconfig.config.annotations.Switch;
+import cc.polyfrost.oneconfig.config.core.OneColor;
 import cc.polyfrost.oneconfig.hud.TextHud;
 import com.zenakin.octestmod.config.TestConfig;
 

@@ -1,7 +1,6 @@
 package com.zenakin.octestmod;
 
-import cc.polyfrost.oneconfig.config.annotations.Switch;
-import cc.polyfrost.oneconfig.config.data.OptionSize;
+import cc.polyfrost.oneconfig.config.core.OneColor;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.gson.JsonElement;
@@ -11,34 +10,28 @@ import com.zenakin.octestmod.config.TestConfig;
 import com.zenakin.octestmod.config.pages.MapBlacklistPage;
 import cc.polyfrost.oneconfig.events.event.InitializationEvent;
 import com.zenakin.octestmod.hud.BedwarsOverlayDisplay;
-import com.zenakin.octestmod.hud.GameStateDisplay;
 import net.minecraft.client.Minecraft;
-import net.minecraft.command.ICommandSender;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.scoreboard.Score;
 import net.minecraft.scoreboard.ScoreObjective;
 import net.minecraft.scoreboard.ScorePlayerTeam;
 import net.minecraft.scoreboard.Scoreboard;
-import net.minecraft.util.ChatComponentText;
-import net.minecraft.util.EnumChatFormatting;
-import net.minecraft.util.ChatStyle;
-import net.minecraft.util.StringUtils;
+import net.minecraft.util.*;
+import net.minecraft.client.audio.PositionedSoundRecord;
+import net.minecraft.client.audio.SoundEventAccessorComposite;
+import net.minecraft.client.audio.SoundHandler;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.fml.common.Mod;
-import cc.polyfrost.oneconfig.utils.commands.CommandManager;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.gameevent.PlayerEvent;
-import net.minecraftforge.fml.common.gameevent.TickEvent;
-import net.minecraftforge.fml.common.network.FMLNetworkEvent;
-import scala.tools.nsc.backend.icode.Primitives;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.*;
+import java.util.Timer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.concurrent.Executors;
@@ -64,9 +57,12 @@ public class OCTestMod {
     public String displayMessage;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private final Map<String, JsonObject> playerDataCache = new ConcurrentHashMap<>();
-    private static final long CACHE_EXPIRY = TimeUnit.MINUTES.toMillis(TestConfig.cacheExpiry);
     private final Map<String, Long> cacheTimestamps = new ConcurrentHashMap<>();
+    public static Map<String, Boolean> playersInParty = new HashMap<>();
+    private static final long CACHE_EXPIRY = TimeUnit.MINUTES.toMillis(TestConfig.cacheExpiry);
+    private static final long CACHE_DELETION_TIME = TimeUnit.MINUTES.toMillis(TestConfig.cacheDeletionTime);
     private long lastRequestTime = 0;
+    public static OneColor statusHudColour = new OneColor(255, 255, 255);
 
     // Register the config and commands.
     @Mod.EventHandler
@@ -123,6 +119,21 @@ public class OCTestMod {
     }
 
     private void performChecks() {
+        if (TestConfig.toggleCacheDeletion) {
+            long currentTime = System.currentTimeMillis();
+            playerDataCache.keySet().removeIf(playerName ->
+                    currentTime - cacheTimestamps.getOrDefault(playerName, 0L) >= CACHE_DELETION_TIME
+            );
+            cacheTimestamps.keySet().removeIf(playerName ->
+                    currentTime - cacheTimestamps.getOrDefault(playerName, 0L) >= CACHE_DELETION_TIME
+            );
+        }
+
+        if (!TestConfig.isModEnabled || !isInBedwarsGame()) {
+            displayMessage = "Check scoreboard and mod state";
+            return;
+        }
+
         //DEBUGGING: Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(0/3) Beginning initial checks.."));
         if (!TestConfig.isModEnabled || !isInBedwarsGame()) {
             displayMessage = "Check scoreboard and mod state";
@@ -134,11 +145,14 @@ public class OCTestMod {
         message.setChatStyle(new ChatStyle().setColor(EnumChatFormatting.GREEN));
         Minecraft.getMinecraft().thePlayer.addChatMessage(message);
          */
+        statusHudColour = TestConfig.goodColour;
         displayMessage = "Good lobby so far..";
 
         if (isMapBlacklisted()) {
-            String mapName = getCurrentMapFromScoreboard();
-            displayMessage = "BLACKLISTED MAP: " + mapName;
+            ResourceLocation soundLocation = new ResourceLocation("octestmod", "notification_pig");
+            Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(soundLocation));
+            statusHudColour = TestConfig.badColour;
+            displayMessage = "BLACKLISTED MAP";
         } else {
             /* DEBUGGING:
             ChatComponentText message2 = new ChatComponentText("(2/3) Passed secondary check (Map Blacklist), moving onto player check!");
@@ -169,8 +183,11 @@ public class OCTestMod {
                             //TODO: DEBUGGING (1) -
                             //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(7.5) Bedwars WLR retrieved: " + bedwarsWLR));
                         if (bedwarsLevel >= TestConfig.starThreshold || bedwarsWLR >= TestConfig.wlrThreshold) {
+                            ResourceLocation soundLocation = new ResourceLocation("octestmod", "notification_pig");
+                            Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(soundLocation));
                             BedwarsOverlayDisplay.writeHUD(playerName, bedwarsLevel, bedwarsWLR);
-                            displayMessage = "HIGH LEVEL PLAYER: " + playerName + ": " + bedwarsLevel + " | " + bedwarsWLR;
+                            statusHudColour = TestConfig.badColour;
+                            displayMessage = "HIGH LEVEL PLAYER";
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -250,15 +267,21 @@ public class OCTestMod {
         int losses = stats.get("losses_bedwars").getAsInt();
         //TODO: DEBUGGING (1) -
         //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(5) Retrieving bedwars WLR: " + (float) (wins / losses)));
-        return (float) (wins / losses);
+        return (round((float)wins / losses, TestConfig.precision));
     }
 
     public Set<String> getPlayersInTabList() {
         Set<String> scannedPlayers = ConcurrentHashMap.newKeySet();
+
         for (EntityPlayer player : Minecraft.getMinecraft().theWorld.playerEntities) {
             //TODO: DEBUGGING (1) -
             //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(0) ADDING PLAYERS TO LIST FROM TAB: " + player.getName()));
-            scannedPlayers.add(player.getName());
+            String playerName = player.getName();
+
+            //TODO: Filter out party members and the player
+            if (playersInParty.containsKey(playerName)) continue;
+
+            scannedPlayers.add(playerName);
         }
         //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(1) PLAYERS ADDED TO LIST FROM TAB: " + scannedPlayers));
         return scannedPlayers;
@@ -474,5 +497,11 @@ public class OCTestMod {
             default:
                 return false; // Return false if the map name doesn't match any known maps
         }
+    }
+
+    private static float round(float val, int precision){
+        int tmp1 = (int) (val*Math.pow(10, precision));
+        return (float) tmp1 / (float) Math.pow(10, precision);
+
     }
 }
