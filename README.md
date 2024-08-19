@@ -16,3 +16,5 @@ TODO:
 - move HUD settings to new page seperate from other settings
 - indicate high level teams (maybe with letter prefix)
 - add compatibility with bridge (starting with duplicating the isInBedwars() method)
+- add sorting to playerlist
+- add colour changing status display
