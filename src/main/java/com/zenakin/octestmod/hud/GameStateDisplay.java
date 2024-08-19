@@ -3,8 +3,6 @@ package com.zenakin.octestmod.hud;
 import cc.polyfrost.oneconfig.hud.SingleTextHud;
 import com.zenakin.octestmod.OCTestMod;
 import com.zenakin.octestmod.config.TestConfig;
-import net.minecraft.client.Minecraft;
-import net.minecraft.util.ChatComponentText;
 
 /**
  * An example OneConfig HUD that is started in the config and displays text.

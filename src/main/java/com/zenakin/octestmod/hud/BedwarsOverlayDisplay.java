@@ -1,15 +1,13 @@
 package com.zenakin.octestmod.hud;
 
 import cc.polyfrost.oneconfig.config.annotations.Switch;
-import cc.polyfrost.oneconfig.hud.SingleTextHud;
 import cc.polyfrost.oneconfig.hud.TextHud;
-import com.zenakin.octestmod.OCTestMod;
 import com.zenakin.octestmod.config.TestConfig;
-import net.minecraft.client.Minecraft;
-import net.minecraft.util.ChatComponentText;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * An example OneConfig HUD that is started in the config and displays text.
@@ -17,7 +15,7 @@ import java.util.List;
  * @see TestConfig#hud2
  */
 public class BedwarsOverlayDisplay extends TextHud {
-    public static List<String> playerStats = new ArrayList<>();
+    public static Map<String, String> playerStats = new HashMap<>();
 
     @Switch(
             name = "Bedwars Level",
@@ -37,8 +35,11 @@ public class BedwarsOverlayDisplay extends TextHud {
 
     @Override
     protected void getLines(List<String> line, boolean example) {
+        line.add("Username: Stars | WLR");
         if (TestConfig.isModEnabled) {
-            line.addAll(playerStats);
+            for (Map.Entry<String, String> entry : playerStats.entrySet()) {
+                line.add(entry.getKey() + ": " + entry.getValue());
+            }
         } else {
             line.clear();
             line.add("Not in game");
@@ -46,14 +47,18 @@ public class BedwarsOverlayDisplay extends TextHud {
     }
 
     public static void writeHUD(String playerName, int bedwarsLevel, float bedwarsWLR) {
-        if (BedwarsOverlayDisplay.levelHUD && BedwarsOverlayDisplay.wlrHUD) {
-            playerStats.add(playerName + ": " + bedwarsLevel + " | " + bedwarsWLR);
-        } else if (!levelHUD && wlrHUD) {
-            playerStats.add(playerName + ": " + bedwarsWLR);
-        } else if (levelHUD && !wlrHUD) {
-            playerStats.add(playerName + ": " + bedwarsLevel);
-        } else {
-            playerStats.add(playerName);
+        StringBuilder hudText = new StringBuilder();
+        if (levelHUD) {
+            hudText.append(bedwarsLevel).append("⭐");
+        }
+        if (wlrHUD) {
+            if (levelHUD) {
+                hudText.append(" | ");
+            }
+            hudText.append(bedwarsWLR);
+        }
+        if (!playerStats.containsKey(playerName)) {
+            playerStats.put(playerName, hudText.toString());
         }
     }
 }

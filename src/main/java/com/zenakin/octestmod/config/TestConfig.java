@@ -43,6 +43,14 @@ public class TestConfig extends Config {
     )
     public static float wlrThreshold = 0.2f;
 
+    @Slider(
+            name = "Bedwars win/loss ratio precision",
+            description = "precision after the decimal point",
+            min = 0, max = 10.1F,
+            step = 1
+    )
+    public static int precision = 2;
+
     /*
     @Checkbox(
             name = "Cache clear toggle",
