@@ -17,9 +17,8 @@ import net.minecraft.scoreboard.ScoreObjective;
 import net.minecraft.scoreboard.ScorePlayerTeam;
 import net.minecraft.scoreboard.Scoreboard;
 import net.minecraft.util.*;
+import net.minecraft.util.ChatComponentText;
 import net.minecraft.client.audio.PositionedSoundRecord;
-import net.minecraft.client.audio.SoundEventAccessorComposite;
-import net.minecraft.client.audio.SoundHandler;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -59,14 +58,16 @@ public class OCTestMod {
     private final Map<String, JsonObject> playerDataCache = new ConcurrentHashMap<>();
     private final Map<String, Long> cacheTimestamps = new ConcurrentHashMap<>();
     public static Map<String, Boolean> playersInParty = new HashMap<>();
+    private final Map<String, Boolean> playersToNickCheck = new ConcurrentHashMap<>();
     private static final long CACHE_EXPIRY = TimeUnit.MINUTES.toMillis(TestConfig.cacheExpiry);
     private static final long CACHE_DELETION_TIME = TimeUnit.MINUTES.toMillis(TestConfig.cacheDeletionTime);
     private long lastRequestTime = 0;
     public static OneColor statusHudColour = new OneColor(255, 255, 255);
+    public static boolean doneInit = false;
 
-    // Register the config and commands.
     @Mod.EventHandler
     public void init(FMLInitializationEvent event) {
+        doneInit = false;
         config = new TestConfig();
         MinecraftForge.EVENT_BUS.register(this);
         MinecraftForge.EVENT_BUS.register(new PlayerLoginHandler());
@@ -91,6 +92,7 @@ public class OCTestMod {
 
         @SubscribeEvent
         public void onWorldLoad(WorldEvent.Load event) {
+            doneInit = false;
             new Timer().schedule(new TimerTask() {
                 @Override
                 public void run() {
@@ -103,6 +105,11 @@ public class OCTestMod {
                     message0.setChatStyle(style);
                     Minecraft.getMinecraft().thePlayer.addChatMessage(message0);
                     BedwarsOverlayDisplay.playerStats.clear();
+                    playersToNickCheck.clear();
+                    statusHudColour = new OneColor(255, 255, 255);
+                    doneInit = true;
+                    //TODO: add "if (!scheduler.awaitTermination(60, TimeUnit.SECONDS))" if scheduler.shutdown(); isn't working right
+                    scheduler.shutdown();
                     if (TestConfig.isModEnabled && isInBedwarsGame()) {
                         startPeriodicChecks();
                     }
@@ -129,11 +136,6 @@ public class OCTestMod {
             );
         }
 
-        if (!TestConfig.isModEnabled || !isInBedwarsGame()) {
-            displayMessage = "Check scoreboard and mod state";
-            return;
-        }
-
         //DEBUGGING: Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(0/3) Beginning initial checks.."));
         if (!TestConfig.isModEnabled || !isInBedwarsGame()) {
             displayMessage = "Check scoreboard and mod state";
@@ -149,7 +151,7 @@ public class OCTestMod {
         displayMessage = "Good lobby so far..";
 
         if (isMapBlacklisted()) {
-            ResourceLocation soundLocation = new ResourceLocation("octestmod", "notification_pig");
+            ResourceLocation soundLocation = new ResourceLocation("octestmod", "notification_ping");
             Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(soundLocation));
             statusHudColour = TestConfig.badColour;
             displayMessage = "BLACKLISTED MAP";
@@ -161,6 +163,7 @@ public class OCTestMod {
              */
 
             for (String playerName : getPlayersInTabList()) {
+                //OLD: checkNicks(playerName);
                 //Necessary??: if (getPlayersInTabList().contains(playerName)) continue;
                 //getPlayersInTabList().add(playerName);
                 //TODO: DEBUGGING (1) -
@@ -174,6 +177,7 @@ public class OCTestMod {
                             //TODO: DEBUGGING (1) -
                             //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(1.5) Passed player scanning, trying to get playerData"));
                             JsonObject playerData = getPlayerData(playerName);
+                            boolean nicked = checkNick(playerData);
                             //TODO: DEBUGGING (1) -
                             //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(6) Player data retrieved from API or cache"));
                             int bedwarsLevel = getBedwarsLevel(playerData);
@@ -182,10 +186,10 @@ public class OCTestMod {
                             float bedwarsWLR = getBedwarsWLR(playerData);
                             //TODO: DEBUGGING (1) -
                             //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(7.5) Bedwars WLR retrieved: " + bedwarsWLR));
-                        if (bedwarsLevel >= TestConfig.starThreshold || bedwarsWLR >= TestConfig.wlrThreshold) {
-                            ResourceLocation soundLocation = new ResourceLocation("octestmod", "notification_pig");
+                        if (bedwarsLevel >= TestConfig.starThreshold || bedwarsWLR >= TestConfig.wlrThreshold || nicked) {
+                            ResourceLocation soundLocation = new ResourceLocation("octestmod", "notification_ping");
                             Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(soundLocation));
-                            BedwarsOverlayDisplay.writeHUD(playerName, bedwarsLevel, bedwarsWLR);
+                            BedwarsOverlayDisplay.writeHUD(nicked, playerName, bedwarsLevel, bedwarsWLR);
                             statusHudColour = TestConfig.badColour;
                             displayMessage = "HIGH LEVEL PLAYER";
                         }
@@ -198,6 +202,59 @@ public class OCTestMod {
             }
             }
         }
+    }
+
+    public boolean checkNick(JsonObject playerData) {
+        String jsonString = "{\"success\":true,\"player\":null}";
+        JsonElement jsonElement = new JsonParser().parse(jsonString);
+
+        return playerData.get("player").isJsonNull();
+    }
+
+    public void sendCommand(String command, String value) {
+        // Ensure the command starts with a '/'
+        if (!command.startsWith("/")) {
+            command = "/" + command + " " + value;
+        } else {
+            command = command + value;
+        }
+
+            Minecraft.getMinecraft().thePlayer.sendChatMessage(command);
+    }
+
+    /* OLD
+    public void checkNicks(String playerName) {
+        if (!playersToNickCheck.containsKey(playerName)) {
+            playersToNickCheck.put(playerName, true);
+            try {
+                tempDelay(() -> {
+                    sendCommand("t", playerName);
+
+                    ChatComponentText message0 = new ChatComponentText(playerName);
+                    ChatStyle style = new ChatStyle()
+                            .setColor(EnumChatFormatting.GREEN)
+                            .setBold(true);
+                    message0.setChatStyle(style);
+                    Minecraft.getMinecraft().thePlayer.addChatMessage(message0);
+                });
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+     */
+
+    private synchronized void tempDelay(Runnable requestTask) throws InterruptedException {
+        long time = System.currentTimeMillis();
+        long timeSinceLast = time - lastRequestTime;
+        int intervalInMs = 500;
+
+        if (timeSinceLast < intervalInMs) {
+            Thread.sleep(intervalInMs - timeSinceLast);
+        }
+
+        requestTask.run();
+        lastRequestTime = System.currentTimeMillis();
     }
 
     private synchronized void performRequestWithDelay(Runnable requestTask) throws InterruptedException {

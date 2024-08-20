@@ -5,9 +5,9 @@ import cc.polyfrost.oneconfig.config.annotations.Number;
 import cc.polyfrost.oneconfig.config.core.OneColor;
 import cc.polyfrost.oneconfig.config.data.PageLocation;
 import com.zenakin.octestmod.OCTestMod;
-import com.zenakin.octestmod.hud.BedwarsOverlayDisplay;
-import com.zenakin.octestmod.hud.GameStateDisplay;
 import com.zenakin.octestmod.config.pages.MapBlacklistPage;
+import com.zenakin.octestmod.config.pages.StatusHudSettingsPage;
+import com.zenakin.octestmod.config.pages.OverlayHudSettingsPage;
 import cc.polyfrost.oneconfig.config.Config;
 import cc.polyfrost.oneconfig.config.data.Mod;
 import cc.polyfrost.oneconfig.config.data.ModType;
@@ -31,6 +31,18 @@ public class TestConfig extends Config {
             description = "Enable/Dissable the player list overlay"
     )
     public static boolean isOverlayEnabled = true;
+
+    @Switch(
+            name = "Display Bedwars Level",
+            description = "Whether or not to display the Bedwars level on the overlay"
+    )
+    public static boolean levelHUD = true;
+
+    @Switch(
+            name = "Display Bedwars WLR",
+            description = "Whether or not to display the Bedwars WLR on the overlay"
+    )
+    public static boolean wlrHUD = true;
 
     @Number(
             name = "Bedwars stars threshold",
@@ -60,15 +72,13 @@ public class TestConfig extends Config {
 
     @Checkbox(
             name = "Cache clear toggle",
-            description = "Whether or not the mod will automatically clear the player data cache (recommended)",
-            size = OptionSize.DUAL
+            description = "Whether or not the mod will automatically clear the player data cache (recommended)"
     )
     public static boolean toggleCacheDeletion = true;
 
     @Number(
             name = "Cache deletion time",
             description = "Time in minutes before the player data stored in the cache is cleared",
-            size = OptionSize.DUAL,
             min = 0, max = 44640,
             step = 1440
     )
@@ -102,6 +112,12 @@ public class TestConfig extends Config {
     )
     public static OneColor badColour = new OneColor(255, 0, 0);
 
+    @Color(
+            name = "Overlay Text Colour",
+            description = "The colour of the text on the Bedwars overlay"
+    )
+    public static OneColor overlayColour = new OneColor(255, 0, 255);
+
     @Text(
             name = "Hypixel API Key",
             placeholder = "Paste your API key here",
@@ -109,22 +125,26 @@ public class TestConfig extends Config {
     )
     public static String apiKey = "";
 
-    @HUD(
-            name = "Display status"
-    )
-    public GameStateDisplay hud = new GameStateDisplay();
-
-    @HUD(
-            name = "Display Bedwars overlay"
-    )
-    public BedwarsOverlayDisplay hud2 = new BedwarsOverlayDisplay();
-
     @Page(
             name = "Map Blacklist",
-            location = PageLocation.TOP,
+            location = PageLocation.BOTTOM,
             description = "More maps will be added soon!"
     )
     public MapBlacklistPage mapBlacklistPage = new MapBlacklistPage();
+
+    @Page(
+            name = "Status HUD Settings",
+            location = PageLocation.BOTTOM,
+            description = "Extra settings to adjust how the status display looks"
+    )
+    public StatusHudSettingsPage statusHudSettingsPage = new StatusHudSettingsPage();
+
+    @Page(
+            name = "Overlay Settings",
+            location = PageLocation.BOTTOM,
+            description = "Extra settings to adjust how the Bedwars overlay looks"
+    )
+    public OverlayHudSettingsPage overlayHudSettingsPage = new OverlayHudSettingsPage();
 
 /*
     @Dropdown(
@@ -136,8 +156,8 @@ public class TestConfig extends Config {
     public TestConfig() {
         super(new Mod(OCTestMod.NAME, ModType.UTIL_QOL), OCTestMod.MODID + ".json");
         //TODO: MAKE THIS WORK vvv
-        this.addDependency("hud2", () -> isOverlayEnabled);
-        this.hideIf("cacheDeletionTime", () -> !toggleCacheDeletion);
+        //this.addDependency("hud2", () -> isOverlayEnabled);
+        //this.hideIf("cacheDeletionTime", () -> !toggleCacheDeletion);
 
         initialize();
 

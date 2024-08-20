@@ -1,12 +1,10 @@
 package com.zenakin.octestmod.hud;
 
-import cc.polyfrost.oneconfig.config.annotations.Color;
-import cc.polyfrost.oneconfig.config.annotations.Switch;
-import cc.polyfrost.oneconfig.config.core.OneColor;
 import cc.polyfrost.oneconfig.hud.TextHud;
+import com.zenakin.octestmod.OCTestMod;
 import com.zenakin.octestmod.config.TestConfig;
+import com.zenakin.octestmod.config.pages.OverlayHudSettingsPage;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,22 +12,10 @@ import java.util.Map;
 /**
  * An example OneConfig HUD that is started in the config and displays text.
  *
- * @see TestConfig#hud2
+ * @see OverlayHudSettingsPage#hud2
  */
 public class BedwarsOverlayDisplay extends TextHud {
     public static Map<String, String> playerStats = new HashMap<>();
-
-    @Switch(
-            name = "Bedwars Level",
-            description = "Whether or not to display the Bedwars level"
-    )
-    public static boolean levelHUD = true;
-
-    @Switch(
-            name = "Bedwars WLR",
-            description = "Whether or not to display the Bedwars WLR"
-    )
-    public static boolean wlrHUD = true;
 
     public BedwarsOverlayDisplay() {
         super(true);
@@ -37,27 +23,55 @@ public class BedwarsOverlayDisplay extends TextHud {
 
     @Override
     protected void getLines(List<String> line, boolean example) {
-        line.add("Username: Stars | WLR");
-        if (TestConfig.isModEnabled) {
-            for (Map.Entry<String, String> entry : playerStats.entrySet()) {
-                line.add(entry.getKey() + ": " + entry.getValue());
+        if (OCTestMod.doneInit) {
+            if (TestConfig.overlayColour != null) {
+                color = TestConfig.overlayColour;
             }
-        } else {
-            line.clear();
-            line.add("Not in game");
+
+
+            if (TestConfig.isModEnabled) {
+                line.add(determineOverlayFormatting());
+
+                for (Map.Entry<String, String> entry : playerStats.entrySet()) {
+                    line.add(entry.getKey() + ": " + entry.getValue());
+                }
+            } else {
+                line.clear();
+                line.add("pending...");
+            }
         }
     }
 
-    public static void writeHUD(String playerName, int bedwarsLevel, float bedwarsWLR) {
+    public static String determineOverlayFormatting() {
+        StringBuilder formatting = new StringBuilder("[Username]");
+
+        if (TestConfig.levelHUD) {
+            formatting.append(": [Stars]");
+        }
+
+        if (TestConfig.wlrHUD) {
+            if (TestConfig.levelHUD) {
+                formatting.append(" | ");
+            }
+            formatting.append("[WLR]");
+        }
+
+        return formatting.toString();
+    }
+
+    public static void writeHUD(boolean nicked, String playerName, int bedwarsLevel, float bedwarsWLR) {
         StringBuilder hudText = new StringBuilder();
-        if (levelHUD) {
+        if (TestConfig.levelHUD) {
             hudText.append(bedwarsLevel).append("⭐");
         }
-        if (wlrHUD) {
-            if (levelHUD) {
+        if (TestConfig.wlrHUD) {
+            if (TestConfig.levelHUD) {
                 hudText.append(" | ");
             }
             hudText.append(bedwarsWLR);
+        }
+        if (nicked) {
+            hudText.append(" - NICKED");
         }
         if (!playerStats.containsKey(playerName)) {
             playerStats.put(playerName, hudText.toString());

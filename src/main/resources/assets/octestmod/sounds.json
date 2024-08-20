@@ -1,0 +1,11 @@
+{
+  "notification_ping": {
+    "category": "block",
+    "sounds": [
+      {
+        "name": "octestmod:sounds/notification_ping",
+        "stream": false
+      }
+    ]
+  }
+}
