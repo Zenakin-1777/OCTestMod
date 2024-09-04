@@ -55,10 +55,10 @@ public class OCTestMod {
     public TestConfig config;
     public String displayMessage;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    //TODO: CURRENT TEST (2) -
     private final Map<String, JsonObject> playerDataCache = new ConcurrentHashMap<>();
     private final Map<String, Long> cacheTimestamps = new ConcurrentHashMap<>();
-    public static Map<String, Boolean> playersInParty = new HashMap<>();
-    private final Map<String, Boolean> playersToNickCheck = new ConcurrentHashMap<>();
+    //TODO: FUTUR FEATURE - public static Map<String, Boolean> playersInParty = new HashMap<>();
     private static final long CACHE_EXPIRY = TimeUnit.MINUTES.toMillis(TestConfig.cacheExpiry);
     private static final long CACHE_DELETION_TIME = TimeUnit.MINUTES.toMillis(TestConfig.cacheDeletionTime);
     private long lastRequestTime = 0;
@@ -104,15 +104,14 @@ public class OCTestMod {
                             .setUnderlined(true);
                     message0.setChatStyle(style);
                     Minecraft.getMinecraft().thePlayer.addChatMessage(message0);
+                    //TODO: CURRENT TEST -
                     BedwarsOverlayDisplay.playerStats.clear();
-                    playersToNickCheck.clear();
+                    //TODO: FIND A WAY TO IMPLEMENT --> scannedPlayers.clear();
                     statusHudColour = new OneColor(255, 255, 255);
                     doneInit = true;
                     //TODO: add "if (!scheduler.awaitTermination(60, TimeUnit.SECONDS))" if scheduler.shutdown(); isn't working right
                     scheduler.shutdown();
-                    if (TestConfig.isModEnabled && isInBedwarsGame()) {
-                        startPeriodicChecks();
-                    }
+                    startPeriodicChecks();
 
                 }
             }, 4000);
@@ -122,10 +121,12 @@ public class OCTestMod {
 
     public void startPeriodicChecks() {
         scheduler.scheduleAtFixedRate(this::performChecks, 1, TestConfig.scanInterval, TimeUnit.SECONDS);
-        //DEBUGGING: Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(-/3) Started preiodic scheduler"));
+        //TODO: DEBUGGING -
+        Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(-/3) Started preiodic scheduler"));
     }
 
     private void performChecks() {
+        //TODO: CURRENT TEST
         if (TestConfig.toggleCacheDeletion) {
             long currentTime = System.currentTimeMillis();
             playerDataCache.keySet().removeIf(playerName ->
@@ -136,6 +137,8 @@ public class OCTestMod {
             );
         }
 
+        //TODO: DEBUGGING (2) -
+        //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("Is in BW: " + isInBedwarsGame()));
         //DEBUGGING: Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(0/3) Beginning initial checks.."));
         if (!TestConfig.isModEnabled || !isInBedwarsGame()) {
             displayMessage = "Check scoreboard and mod state";
@@ -150,11 +153,14 @@ public class OCTestMod {
         statusHudColour = TestConfig.goodColour;
         displayMessage = "Good lobby so far..";
 
+        //TODO: DEBUGGING (1) -
+        //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("Is map blacklisted: " + isMapBlacklisted()));
+
         if (isMapBlacklisted()) {
             ResourceLocation soundLocation = new ResourceLocation("octestmod", "notification_ping");
             Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(soundLocation));
             statusHudColour = TestConfig.badColour;
-            displayMessage = "BLACKLISTED MAP";
+            displayMessage = "BLACKLISTED MAP DETECTED";
         } else {
             /* DEBUGGING:
             ChatComponentText message2 = new ChatComponentText("(2/3) Passed secondary check (Map Blacklist), moving onto player check!");
@@ -191,7 +197,7 @@ public class OCTestMod {
                             Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.create(soundLocation));
                             BedwarsOverlayDisplay.writeHUD(nicked, playerName, bedwarsLevel, bedwarsWLR);
                             statusHudColour = TestConfig.badColour;
-                            displayMessage = "HIGH LEVEL PLAYER";
+                            displayMessage = "HIGH LEVEL PLAYER(S) DETECTED";
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -272,6 +278,7 @@ public class OCTestMod {
     private JsonObject getPlayerData(String playerName) throws Exception {
         long currentTime = System.currentTimeMillis();
 
+        //TODO: CURRENT TEST
         if (playerDataCache.containsKey(playerName) && (currentTime - cacheTimestamps.get(playerName) < CACHE_EXPIRY)) {
             return playerDataCache.get(playerName);
         }
@@ -297,6 +304,7 @@ public class OCTestMod {
             JsonElement jsonElement = parser.parse(response.toString());
             JsonObject playerData = jsonElement.getAsJsonObject();
 
+            //TODO: CURRENT TEST (2) -
             playerDataCache.put(playerName, playerData);
             cacheTimestamps.put(playerName, currentTime);
 
@@ -336,11 +344,14 @@ public class OCTestMod {
             String playerName = player.getName();
 
             //TODO: Filter out party members and the player
-            if (playersInParty.containsKey(playerName)) continue;
+            //TODO: FUTUR FEATURE - if (playersInParty.containsKey(playerName)) continue;
 
             scannedPlayers.add(playerName);
         }
         //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("(1) PLAYERS ADDED TO LIST FROM TAB: " + scannedPlayers));
+        //TODO: CURRENT TEST (2) -
+        //scannedPlayers.clear();
+        //scannedPlayers.add("tmp");
         return scannedPlayers;
     }
 
@@ -375,6 +386,8 @@ public class OCTestMod {
                 mapName = sCleaned.substring(5).trim();
             }
         }
+        //TODO: DEBUGGING (1) -
+        //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("MAP IDENTIFIED: " + mapName));
         return mapName;
     }
 

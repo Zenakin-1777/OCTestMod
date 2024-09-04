@@ -3,7 +3,7 @@
     "category": "block",
     "sounds": [
       {
-        "name": "octestmod:sounds/notification_ping",
+        "name": "octestmod:notification_ping",
         "stream": false
       }
     ]

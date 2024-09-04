@@ -15,6 +15,7 @@ import java.util.Map;
  * @see OverlayHudSettingsPage#hud2
  */
 public class BedwarsOverlayDisplay extends TextHud {
+    //TODO: CURRENT TEST -
     public static Map<String, String> playerStats = new HashMap<>();
 
     public BedwarsOverlayDisplay() {
@@ -32,6 +33,7 @@ public class BedwarsOverlayDisplay extends TextHud {
             if (TestConfig.isModEnabled) {
                 line.add(determineOverlayFormatting());
 
+                //TODO: CURRENT TEST
                 for (Map.Entry<String, String> entry : playerStats.entrySet()) {
                     line.add(entry.getKey() + ": " + entry.getValue());
                 }
@@ -73,6 +75,7 @@ public class BedwarsOverlayDisplay extends TextHud {
         if (nicked) {
             hudText.append(" - NICKED");
         }
+        //TODO: CURRENT TEST
         if (!playerStats.containsKey(playerName)) {
             playerStats.put(playerName, hudText.toString());
         }

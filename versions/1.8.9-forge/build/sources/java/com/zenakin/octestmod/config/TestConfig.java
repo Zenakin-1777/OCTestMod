@@ -46,7 +46,7 @@ public class TestConfig extends Config {
 
     @Number(
             name = "Bedwars stars threshold",
-            description = "Maximum level before a lobby dodge is recommended",
+            description = "Maximum level before identified as a threat",
             size = OptionSize.DUAL,
             min = 10, max = 5000,
             step = 25
@@ -55,7 +55,7 @@ public class TestConfig extends Config {
 
     @Number(
             name = "Bedwars WLR threshold",
-            description = "Maximum WLR before a lobby dodge is recommended",
+            description = "Maximum WLR before identified as a therat",
             size = OptionSize.DUAL,
             min = 0.0f, max = 10.0f
     )
