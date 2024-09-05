@@ -18,6 +18,7 @@ TODO:
 - [IMPORTANT] fix dependancies not working (Overlay toggle, Cache Clear toggle)
 - [CORE FEATURE] fix notification sounds
 - [NEXT] add reset to defaults button to some of the configs
+- [NEXT] add "updateUrl" to mcmod.info
 
 Patch:
 3. GameStateDisplay.java
